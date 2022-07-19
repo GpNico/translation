@@ -1,0 +1,78 @@
+dataset:
+  only_gold_translation: False
+  language_similarity: 'mse'
+  L:
+    delta: 4
+    dim: 2
+    mus1:
+    - - -2.5
+      - 1.0
+    - - -1.5
+      - 0.2
+    - - -2.0
+      - -0.8
+    mus2:
+    - - 1.5
+      - 1.0
+    - - 2.5
+      - 0.2
+    - - 2.0
+      - -0.8
+    sigmas:
+    - 0.1
+    - 0.2
+    - 0.04
+  M:
+    a11: 1.0
+    a12: -1.0
+    a21: 0.5
+    a22: -0.3
+    dim: 2
+  size: 1000
+models:
+  decoder:
+    linear:
+      bias: true
+      dim_in: 2
+      dim_out: 2
+    mlp:
+      dim_hidden: 16
+      dim_in: 2
+      dim_out: 2
+    model: mlp
+  discriminator:
+    linear:
+      dim_in: 2
+      dim_out: 1
+    mlp:
+      dim_hidden: 3
+      dim_in: 2
+      dim_out: 1
+    model: mlp
+  encoder:
+    batch_norm: false
+    linear:
+      bias: true
+      dim_in: 2
+      dim_out: 2
+    mlp:
+      dim_hidden: 16
+      dim_in: 2
+      dim_out: 2
+    model: mlp
+name: GaussianMixture
+training:
+  adversial: false
+  adversial_patience: 1
+  analyse_every: 50
+  batch_size: 32
+  denoising: true
+  lr: 0.004678427417240513
+  lr adversial: 0.001
+  n_epochs: 20
+  noise_function: gaussian
+  noise_intensity: 0.05
+  prop_gold: 0.1
+  share_dec: false
+  share_enc: false
+  stochastic: false

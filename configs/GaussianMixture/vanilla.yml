@@ -1,0 +1,74 @@
+name: 'GaussianMixture'
+            
+training: 
+  stochastic: False
+  prop_gold: 0.
+  denoising: True
+  adversial: False
+  share_enc: False
+  share_dec: False
+  noise_function: 'gaussian'
+  noise_intensity: 0.05
+  adversial_patience: 1
+  batch_size: 16
+  lr: 0.005
+  lr adversial: 0.001
+  n_epochs: 20
+  analyse_every: 50
+  wandb: False
+
+dataset:
+  only_gold_translation: False
+  language_similarity: 'mse'
+  size: 10000
+  L:
+    dim: 2 
+    mus1: [[-2.5, 1.], [-1.5, 0.2], [-2., -0.8]]
+    mus2: [[1.5, 1.], [2.5, 0.2], [2., -0.8]]
+    sigmas: [0.1, 0.2, 0.04]
+    delta: 4
+  M:
+    dim: 2
+    a11: 1.
+    a21: 0.5
+    a12: -1.
+    a22: -0.3
+
+
+models:
+  encoder:
+    model: "mlp"
+    batch_norm: False
+    linear:
+      dim_in: 2
+      dim_out: 2
+      bias: True
+    mlp:
+      dim_in: 2
+      dim_hidden: 16
+      dim_out: 2
+  decoder:
+    model: "mlp"
+    linear:
+      dim_in: 2
+      dim_out: 2
+      bias: True
+    mlp:
+      dim_in: 2
+      dim_hidden: 16
+      dim_out: 2
+  discriminator:
+    model: "mlp"
+    linear:
+      dim_in: 2
+      dim_out: 1
+    mlp:
+      dim_in: 2
+      dim_hidden: 3
+      dim_out: 1
+
+  
+            
+            
+
+      

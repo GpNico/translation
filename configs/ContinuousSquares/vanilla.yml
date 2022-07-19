@@ -1,0 +1,102 @@
+name: 'ContinuousSquares'
+            
+training: 
+  stochastic: False
+  prop_gold: 0.3
+  denoising: True
+  adversial: False
+  share_enc: 0
+  share_dec: 0
+  noise_function: 'gaussian'
+  noise_intensity: 0.05
+  adversial_patience: 1
+  batch_size: 16
+  lr: 0.006
+  lr adversial: 0.001
+  n_epochs: 20
+  analyse_every: 50
+  wandb: False
+  early_stopping: True
+  early_stopping_patience: 5
+
+dataset:
+  max_len: -1
+  only_gold_translation: False
+  size: 10000
+  language_similarity: -1
+  L:
+    positions:
+      x_min: -3
+      x_max: 3
+      y_min: -1
+      y_max: 1
+    dim: 2
+  L1:
+    positions:
+      x_min: -3
+      x_max: -1
+      y_min: -1
+      y_max: 1
+    probs:
+      type: 'uniform'
+      top_left: 0.25
+      bottom_left: 0.25
+      top_right: 0.25
+      bottom_right: 0.25
+  L2:
+    positions:
+      x_min: 1
+      x_max: 3
+      y_min: -1
+      y_max: 1
+    probs:
+      type: 'uniform'
+      top_left: 0.25
+      bottom_left: 0.25
+      top_right: 0.25
+      bottom_right: 0.25
+  M:
+    dim: 2
+    a11: 1.
+    a21: 0.5
+    a12: -1.
+    a22: -0.3
+
+
+models:
+  encoder:
+    model: "mlp"
+    batch_norm: False
+    linear:
+      dim_in: 2
+      dim_out: 2
+      bias: True
+    mlp:
+      dim_in: 2
+      dim_hidden: 4
+      dim_out: 2
+  decoder:
+    model: "mlp"
+    linear:
+      dim_in: 2
+      dim_out: 2
+      bias: True
+    mlp:
+      dim_in: 2
+      dim_hidden: 16
+      dim_out: 2
+  discriminator:
+    model: "mlp"
+    linear:
+      dim_in: 2
+      dim_out: 1
+    mlp:
+      dim_in: 2
+      dim_hidden: 3
+      dim_out: 1
+
+  
+            
+            
+
+      

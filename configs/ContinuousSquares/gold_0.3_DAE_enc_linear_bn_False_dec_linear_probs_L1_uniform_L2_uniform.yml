@@ -1,0 +1,89 @@
+dataset:
+  only_gold_translation: False
+  language_similarity: 'mse'
+  L:
+    dim: 2
+    positions:
+      x_max: 3
+      x_min: -3
+      y_max: 1
+      y_min: -1
+  L1:
+    positions:
+      x_max: -1
+      x_min: -3
+      y_max: 1
+      y_min: -1
+    probs:
+      bottom_left: 0.25
+      bottom_right: 0.25
+      top_left: 0.25
+      top_right: 0.25
+      type: uniform
+  L2:
+    positions:
+      x_max: 3
+      x_min: 1
+      y_max: 1
+      y_min: -1
+    probs:
+      bottom_left: 0.25
+      bottom_right: 0.25
+      top_left: 0.25
+      top_right: 0.25
+      type: uniform
+  M:
+    a11: 1.0
+    a12: -1.0
+    a21: 0.5
+    a22: -0.3
+    dim: 2
+  size: 50000
+models:
+  decoder:
+    linear:
+      bias: true
+      dim_in: 2
+      dim_out: 2
+    mlp:
+      dim_hidden: 3
+      dim_in: 2
+      dim_out: 2
+    model: linear
+  discriminator:
+    linear:
+      dim_in: 2
+      dim_out: 1
+    mlp:
+      dim_hidden: 3
+      dim_in: 2
+      dim_out: 1
+    model: mlp
+  encoder:
+    batch_norm: false
+    linear:
+      bias: true
+      dim_in: 2
+      dim_out: 2
+    mlp:
+      dim_hidden: 16
+      dim_in: 2
+      dim_out: 2
+    model: linear
+name: ContinuousSquares
+training:
+  adversial: false
+  adversial_patience: 1
+  analyse_every: 50
+  batch_size: 16
+  denoising: true
+  lr: 0.0013425582643842946
+  lr adversial: 0.001
+  n_epochs: 5
+  noise_function: gaussian
+  noise_intensity: 0.05
+  prop_gold: 0.3
+  share_dec: false
+  share_enc: false
+  stochastic: false
+  wandb: False

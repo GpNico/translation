@@ -1,101 +1,94 @@
 
 
 import argparse
-
+import os
+import yaml
+from analysis.multiple_runner import MultipleRunner
 
 from src.train import BackTranslation
+from analysis.analyser import Analyser2D
+from analysis.multiple_runner import MultipleRunner
+from src.tune import HyperParametersTuner
+from tools.helpers import get_configs_name
 
 if __name__ == '__main__':
     
-    """
+    
     # To be changed
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter, allow_abbrev=False)
     parser.add_argument('-d',
                         '--dataset',
                         type=str,
-                        default='',
+                        default='ContinuousSquares',
                         dest='dataset',
-                        help='Name of the dataset used to evaluate BERT knowledge. Choices : custom, wordnet, trex, bless, evil_trex.')
-    parser.add_argument('-m',
-                        '--model',
-                        type=str,
-                        default='bert',
-                        dest='model',
-                        help='Name of the model we use. Choices : bert, bert-cased, bert-large, bert-untrained, distilbert, roberta.')
-    parser.add_argument("--content", 
-                        help="Compute everything for the content words.",
+                        help='Name of the dataset. Choices : ContinuousSquares, GaussianMixture.')
+    parser.add_argument("--train", 
+                        help="If true it runs a training.",
                         action="store_true")
-    parser.add_argument("--logical", 
-                        help="Compute everything for the logical words.",
+    parser.add_argument("--plot", 
+                        help="If true it plot the analysis.",
+                        action="store_true")
+    parser.add_argument("-a",
+                        "--analyse", 
+                        help="If true it computes an analysis.",
+                        action="store_true")
+    parser.add_argument("-m",
+                        "--multiple_exp", 
+                        help="If true conducts multiple experiment, compute stats \
+                              and save it.",
+                        action="store_true")
+    parser.add_argument("--tune", 
+                        help="Run hyperparameters search.",
                         action="store_true")
     args = parser.parse_args()
     
-    pre_trained_model_name = 'bert-base-uncased'
-    dataset_name = args.dataset
-    model_name = args.model
-    filtration_type = args.filtration_type
-    """
+    assert not(args.multiple_exp) or (args.train == False and args.analyse == False)
 
-    configs_s = {'name': 'DiscreteSquares',
-              'stochastic': True,
-              'n_sentences': 50000,
-              'L_x_min': -1,
-              'L_x_max': 5,
-              'L_y_min': -1,
-              'L_y_max': 1,
-              'discrete_step': 0.5, 
-              'L1_x_min': -1,
-              'L1_x_max': 1,
-              'L1_y_min': -1,
-              'L1_y_max': 1,
-              'L2_x_min': 3,
-              'L2_x_max': 5,
-              'L2_y_min': -1,
-              'L2_y_max': 1,
-              'dim_M': 3,
-              'dim_L': 3,
-              'epsilon1': 0.5,
-              'epsilon2': 0.5,
-              'max_k': 1, # n in the formula above so z belons to [-4*eps, 4*eps]
-              'enc_model': 'linear',
-              'dec_model': 'linear',
-              'noise_intensity': 0.005,
-              'batch_size': 16,
-              'n_epochs': 10}
+    # Configs
+    selector_configs_file = "configs\\{}\\vanilla.yml".format(args.dataset)
 
-    # To put elsewhere
-    Nx_L = int((configs_s['L_x_max'] - configs_s['L_x_min'])/configs_s['discrete_step']) + 1
-    Ny_L = int((configs_s['L_y_max'] - configs_s['L_y_min'])/configs_s['discrete_step']) + 1
-    Nz_L = 2*configs_s['max_k'] + 1
-    dec_dim_out = Nx_L * Ny_L * Nz_L
-    configs_s['dec_dim_out'] = dec_dim_out
+    with open(selector_configs_file) as file:
+        selector_configs = yaml.safe_load(file)
 
-    configs_d = {'name': 'ContinuousSquares',
-              'stochastic': False,
-              'n_sentences': 50000,
-              'L1_x_min': -1,
-              'L1_x_max': 1,
-              'L1_y_min': -1,
-              'L1_y_max': 1,
-              'L2_x_min': 3,
-              'L2_x_max': 5,
-              'L2_y_min': -1,
-              'L2_y_max': 1,
-              'dim_M': 2,
-              'dim_L': 2,
-              'dec_dim_out': 2,
-              'enc_model': 'linear',
-              'dec_model': 'linear',
-              'noise_intensity': 0.005,
-              'batch_size': 16,
-              'n_epochs': 10}
+    best_configs_file = "configs\\{}\\{}.yml".format(
+                                            args.dataset,
+                                            get_configs_name(selector_configs)
+                                            )
 
-    configs = configs_s
+    try:
+        with open(best_configs_file) as file:
+            configs = yaml.safe_load(file)
+    except:
+        print("This configs parameters were not optimized!")
+        configs = selector_configs
 
-    # Training
-    bt = BackTranslation(configs)
-    bt.train(denoising = True,
-             silent = False)
+    # Options
+    if args.train:
+        # Training
+        bt = BackTranslation(configs)
+        bt.train(silent = False,
+                 analyse = args.analyse)
+    
+    if args.analyse:
+        if configs['name'] in ['DiscreteSquares', 
+                               'ContinuousSquares',
+                               'GaussianMixture']:
+            analysis_2d = Analyser2D(configs)
+
+            analysis_2d.L_and_M_stats(n_batches = 8,
+                                      plot = args.plot)
+
+    if args.multiple_exp:
+        runner = MultipleRunner(configs,
+                                n_exp = 30)
+        runner.stats_wrapper()
+
+
+    # To put in its own file afterwards
+    if args.tune:
+        tuner = HyperParametersTuner(configs)
+        tuner.tune(num_samples = 20)
+
 
         
 
