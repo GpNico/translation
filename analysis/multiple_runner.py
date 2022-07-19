@@ -155,7 +155,7 @@ class MultipleRunner:
 
         return stats_list_raw[-1].mean(axis = 1).tolist(), np.stack(stats_list_raw)
 
-    def _config_filler(self) -> list[float]:
+    def _config_filler(self):
         """
             Look at the configs file and returns a list
             that specifies with ones and zeros wheter the
@@ -194,7 +194,7 @@ class MultipleRunner:
 
         return config_list
 
-    def _columns_names(self) -> list[str]:
+    def _columns_names(self):
         return ['dataset size',
                 'prop gold',
                 'denoising',

@@ -53,7 +53,7 @@ class SentencesDataset(Dataset):
                 return min(self.max_data_size , len(self.data))
         return self.data.shape[0]
 
-    def __getitem__(self, item: int) -> dict[str, torch.Tensor]:
+    def __getitem__(self, item: int):
         if self.tokenizer is not None:
             if self.name is not None:
                 if self.name in ['WMT14']:
@@ -114,7 +114,7 @@ class Languages:
         # Max data size
         self.max_size = -1
 
-    def _get_datasets(self, language: int) -> tuple[SentencesDataset]:
+    def _get_datasets(self, language: int):
         """
             Construct datasets for train, Validation
             and test.
@@ -148,7 +148,7 @@ class Languages:
 
     def get_dataloaders(self, language: int,
                               batch_size: int,
-                              prop_gold: int) -> tuple[DataLoader]:
+                              prop_gold: int):
         """
             Construct dataloaders for train, validation
             and test. 
@@ -193,7 +193,7 @@ class Languages:
             return train_loader, None, valid_loader, test_loader
 
 
-    def _train_valid_test_split(self, language: int) -> tuple[torch.Tensor]:
+    def _train_valid_test_split(self, language: int):
         """
            Split sentences in three train, valiation
            and test sets respectively.
@@ -212,7 +212,7 @@ class Languages:
         return data_train, data_valid, data_test
 
     def _train_gold_split(self, train_dataset: SentencesDataset,
-                                prop_gold: int) -> tuple[SentencesDataset]:
+                                prop_gold: int):
 
         train_size_no_gold = int((1-prop_gold) * len(train_dataset))
         train_size_gold = len(train_dataset) - train_size_no_gold
@@ -404,10 +404,13 @@ class PCFG(Languages):
 
         # Load tokenizer and/or train tokenizer
         if configs['dataset']['joint_tokenization']:
-            tokenizer_name = "data\\tokenizer\\pcfg-{}-{}_voc_{}.json".format(
+            tokenizer_name = os.path.join("data",
+                                          "tokenizer",
+                                          "pcfg-{}-{}_voc_{}.json".format(
                                                                     self.L1_name, 
                                                                     self.L2_name,
                                                                     configs['dataset']['vocab_size'])
+                                        )
 
             if os.path.exists(tokenizer_name):
                 print("Found tokenizer at {}".format(tokenizer_name))
@@ -442,10 +445,13 @@ class PCFG(Languages):
                 print("Done! New tokenizer saved at {}".format(tokenizer_name))
 
             # if init embedding
-            self.embed_layer_name = "data\\embeddings\\pcfg-{}-{}_voc_{}.pt".format(
+            self.embed_layer_name = os.path.join("data",
+                                                 "embeddings",
+                                                 "pcfg-{}-{}_voc_{}.pt".format(
                                                     self.L1_name, 
                                                     self.L2_name,
                                                     self.configs['dataset']['vocab_size'])
+                                                )
             if os.path.exists(self.embed_layer_name):
                 print("Found Embedding Layer at {}".format(
                     self.embed_layer_name
@@ -463,7 +469,7 @@ class PCFG(Languages):
                     [elem[1] for elem in self.data[i : i + batch_size]]
             yield batch
 
-    def _train_valid_test_split(self, language: int) -> tuple[torch.Tensor]:
+    def _train_valid_test_split(self, language: int):
         """
            Split sentences in three train, valiation
            and test sets respectively.
@@ -541,9 +547,9 @@ class PCFG(Languages):
         return token_tokenized_corpus
 
     def load_data(self):
-        with open('data\\artificial_grammar\\permuted_samples\\sample_{}.txt'.format(self.L1_name)) as f:
+        with open(os.path.join('data','artificial_grammar','permuted_samples','sample_{}.txt'.format(self.L1_name))) as f:
             lines_1 = f.readlines()
-        with open('data\\artificial_grammar\\permuted_samples\\sample_{}.txt'.format(self.L2_name)) as f:
+        with open(os.path.join('data','artificial_grammar','permuted_samples','sample_{}.txt'.format(self.L2_name))) as f:
             lines_2 = f.readlines()
         assert len(lines_1) == len(lines_2)
         pairs = []
@@ -650,7 +656,7 @@ class SimpleEN_FR(Languages):
                     [elem[1] for elem in self.data[i : i + batch_size]]
             yield batch
 
-    def _train_valid_test_split(self, language: int) -> tuple[torch.Tensor]:
+    def _train_valid_test_split(self, language: int):
         """
            Split sentences in three train, valiation
            and test sets respectively.

@@ -1,7 +1,6 @@
 """
     blabla
 """    
-import msilib
 import numpy as np
 from tools.helpers import get_weights_name
 import tqdm
@@ -92,6 +91,7 @@ class BackTranslation:
         print([self.languages.tokenizer.id_to_token(token) for token in b['gold translation'][0]])
         print(b['lengths'])
         exit(0)
+        
         #TEST
         encoder = LSTMEnc(configs)
         decoder = LSTMDec(configs, encoder)
@@ -363,7 +363,7 @@ class BackTranslation:
                 None)
 
     def evaluate_backtranslation(self, loader1: torch.utils.data.DataLoader,
-                                       loader2: torch.utils.data.DataLoader) -> tuple[float, float]:
+                                       loader2: torch.utils.data.DataLoader):
         """
             Evaluate a model on the test_loader.
             For now returns the loss according to criterion.
@@ -424,7 +424,7 @@ class BackTranslation:
         return np.round(eval_loss1 / loader_size, 2), np.round(eval_loss2 / loader_size, 2)
 
     def evaluate_adversial(self, loader1: torch.utils.data.DataLoader,
-                                 loader2: torch.utils.data.DataLoader) -> tuple[float, float]:
+                                 loader2: torch.utils.data.DataLoader):
         """
             Evaluate the discriminator on both language.
             Returns loss (BCE) and accuracy.
@@ -483,7 +483,7 @@ class BackTranslation:
 
     def evaluate(self, loader1: DataLoader, 
                        loader2: DataLoader,
-                       ) -> tuple[float, float]:    
+                       ):    
         """
             Evaluate the model on the different tasks.
         """

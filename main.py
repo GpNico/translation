@@ -45,15 +45,15 @@ if __name__ == '__main__':
     assert not(args.multiple_exp) or (args.train == False and args.analyse == False)
 
     # Configs
-    selector_configs_file = "configs\\{}\\vanilla.yml".format(args.dataset)
+    selector_configs_file = os.path.join('configs',args.dataset,'vanilla.yml')
 
     with open(selector_configs_file) as file:
         selector_configs = yaml.safe_load(file)
 
-    best_configs_file = "configs\\{}\\{}.yml".format(
-                                            args.dataset,
-                                            get_configs_name(selector_configs)
-                                            )
+    best_configs_file = os.path.join('configs',
+                                     args.dataset,
+                                     '{}.yml'.format(get_configs_name(selector_configs))
+                                     )
 
     try:
         with open(best_configs_file) as file:
