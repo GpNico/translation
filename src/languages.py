@@ -80,12 +80,19 @@ class SentencesDataset(Dataset):
                                      for _ in range(self.max_len - length)]
             input_ids = torch.tensor(input_ids[:self.max_len],
                                      dtype = torch.int)
+            if length == self.max_len:
+                input_ids[-1] = self.tokenizer.token_to_id('[EOS]')
+
             gold_input_ids = self.tokenizer.encode(bos2 + gold_trad + eos).ids
             gold_length = min(len(gold_input_ids), self.max_len)
             gold_input_ids = gold_input_ids + [self.tokenizer.token_to_id('[PAD]') \
                                                for _ in range(self.max_len - len(gold_input_ids))]
             gold_input_ids = torch.tensor(gold_input_ids[:self.max_len],
                                           dtype = torch.int)
+
+            if gold_length == self.max_len:
+                gold_input_ids[-1] = self.tokenizer.token_to_id('[EOS]')
+
             item_dict = {'sentences': input_ids,
                          'gold translation': gold_input_ids,
                          'lengths': length,
