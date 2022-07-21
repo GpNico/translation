@@ -75,8 +75,24 @@ class Noiser:
         print("sentence : ", self.tokenizer.decode(torch.transpose(x, 0, 1).tolist()[3]))
         print("sentence : ", self.tokenizer.decode(torch.transpose(x, 0, 1).tolist()[4]))
         print("sentence : ", self.tokenizer.decode(torch.transpose(x, 0, 1).tolist()[5]))
+        """
+    
+        x, lengths = self.word_blank(x, lengths, language)
+        """
+        print("dropout : ", x.shape)
+        print("sentence : ", self.tokenizer.decode(torch.transpose(x, 0, 1).tolist()[0]))
+        print("sentence : ", self.tokenizer.decode(torch.transpose(x, 0, 1).tolist()[1]))
+        print("sentence : ", self.tokenizer.decode(torch.transpose(x, 0, 1).tolist()[2]))
+        print("sentence : ", self.tokenizer.decode(torch.transpose(x, 0, 1).tolist()[3]))
+        print("sentence : ", self.tokenizer.decode(torch.transpose(x, 0, 1).tolist()[4]))
+        print("sentence : ", self.tokenizer.decode(torch.transpose(x, 0, 1).tolist()[5]))
+        print("")
+        print("sentence : ", [self.tokenizer.id_to_token(token) for token in torch.transpose(x, 0, 1).tolist()[0]])
+        print("sentence : ", [self.tokenizer.id_to_token(token) for token in torch.transpose(x, 0, 1).tolist()[1]])
+        print("sentence : ", [self.tokenizer.id_to_token(token) for token in torch.transpose(x, 0, 1).tolist()[2]])
         exit(0)
         """
+        
         return torch.transpose(x, 0, 1) , lengths
 
 
@@ -97,7 +113,7 @@ class Noiser:
         bpe_end = self.bpe_end[x]
         word_idx = bpe_end.cumsum(0) - 1
 
-        assert self.noise_intensity['word_shuffle'] > 1
+        assert self.noise_intensity['word_shuffle'] >= 1
         x2 = x.clone()
         for i in range(l.size(0)):
             # generate a random permutation
@@ -172,7 +188,7 @@ class Noiser:
             assert x[l[i] - 1, i] == self.tokenizer.token_to_id('[EOS]')
             words = x[:l[i] - 1, i].tolist()
             # randomly blank words from the input
-            new_s = [w if keep[word_idx[j, i], i] else self.params.blank_index for j, w in enumerate(words)]
+            new_s = [w if keep[word_idx[j, i], i] else self.tokenizer.token_to_id('[BLANK]') for j, w in enumerate(words)] # Don't have blank index so using x instead... Maybe need to retokenize everything
             new_s.append(self.tokenizer.token_to_id('[EOS]'))
             assert len(new_s) == l[i] and new_s[0] == bos_index and new_s[-1] == self.tokenizer.token_to_id('[EOS]')
             sentences.append(new_s)

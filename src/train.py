@@ -8,11 +8,12 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
+from transformers import get_linear_schedule_with_warmup, get_cosine_schedule_with_warmup
 
 from ray import tune
 import wandb
 
-from src.models import BackTranslator, Discriminator, LSTMEnc, LSTMDec
+from src.models import BackTranslator, Discriminator, TransformerEnc, TransformerDec, LSTMEnc, LSTMDec
 from src.languages import ContinuousSquares, GaussianMixture, WMT14, SimpleEN_FR, PCFG
 from tools.noise_functions import Noiser
 from tools.helpers import get_weights_name, binary_accuracy, log_sentences_table
@@ -83,17 +84,35 @@ class BackTranslation:
                                                                              len(self.L2_test_loader)
                                                                              )
                                                                     )
-        """                                                                
+        self.L1_train_size = L1_train_size
+        self.L2_train_size = L2_train_size
+        """                                                       
         b = next(iter(self.L1_train_loader))
         print(b['sentences'].shape)
         print(b['sentences'][0])
         print([self.languages.tokenizer.id_to_token(token) for token in b['sentences'][0]])
         print([self.languages.tokenizer.id_to_token(token) for token in b['gold translation'][0]])
         print(b['lengths'])
-        exit(0)
         
         #TEST
-        encoder = LSTMEnc(configs)
+        encoder = TransformerEnc(configs)
+        #encoder = LSTMEnc(configs)
+        decoder = TransformerDec(configs, encoder)
+        #decoder = LSTMDec(configs, encoder)
+        inputs = {'x': b['sentences'],
+                  'lengths': b['lengths']}
+
+        m = encoder(inputs, 1)
+        print(m['m'].dec_input['encoder_out'].shape)
+        #print(m['m'].dec_input.shape)
+
+        m['y'] = b['sentences']
+
+        scores = decoder(m, 1)
+        sent_gen, _, _ = decoder.generate(m, language = 1, sample = False, temperature = None)
+        print("Scores : {}".format(scores.shape))
+        print(sent_gen[0].shape)
+        exit(0)
         decoder = LSTMDec(configs, encoder)
 
         inputs = {'x': b['sentences'],
@@ -113,6 +132,7 @@ class BackTranslation:
         self._build_models()
         
         self._get_optimizers()
+        self.lambda_dae = self.configs['training']['lr_lm'][0]
 
         self._get_language_similarity()
 
@@ -179,6 +199,14 @@ class BackTranslation:
                                                       betas=(0.5, 0.999))
             self.train_D = True
             self.train_G = False
+
+    def _get_scheduler(self):
+
+        if self.configs['training']['scheduler']:
+            self.scheduler = get_cosine_schedule_with_warmup(self.optimizer,
+                        num_warmup_steps=self.L1_train_size*self.configs['training']['warmup_epochs'],
+                        num_training_steps=self.configs['training']['n_epochs']*self.L1_train_size
+                        )
 
     def _get_language_similarity(self):
         # Measuring similarity between sentences
@@ -776,10 +804,18 @@ class BackTranslation:
         if self.configs['training']['lm_pretraining']:
             print("\n ### LM PRETRAINING ### ")
             self._lm_pretraining(silent)
+
+        self._get_scheduler()
         
         #best_test_loss = valid_loss
         print("\n ### BACKTRANSLATION ### ")
         for epoch in range(self.configs['training']['n_epochs']):
+            # Modifying DAE lr
+            if self.configs['training']['denoising']:
+                if epoch in list(self.configs['training']['lr_lm'].keys()):
+                    self.lr_lm = self.configs['training']['lr_lm'][epoch]
+                    print("updating DAE lr to {}.".format(self.lr_lm))
+            # Actual Training
             train_loss, valid_metrics = self._train_one_epoch(analyse)
 
             if self.configs['training']['wandb']:
@@ -926,8 +962,8 @@ class BackTranslation:
                                                   language = 1)
                 L2_loss_dae = self.step_denoising(L2_batch,
                                                   language = 2)
-                loss += L1_loss_dae
-                loss += L2_loss_dae
+                loss += self.lr_lm*L1_loss_dae
+                loss += self.lr_lm*L2_loss_dae
             if self.configs['training']['adversial']:
                 loss_adv = self.step_adversial_dis(L1_batch,
                                                    L2_batch,
@@ -950,6 +986,8 @@ class BackTranslation:
             loss.backward()
             self.optimizer.step()
             self.optimizer.zero_grad()
+            if self.configs['training']['scheduler']:
+                self.scheduler.step()
 
             epoch_loss += loss.item()
             self.total_steps += 1

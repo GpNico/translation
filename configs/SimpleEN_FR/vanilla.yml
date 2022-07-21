@@ -10,15 +10,21 @@ training:
   share_dec: 1 #Number of layers to share in the decoders
   noise_function: 'shuffle_drop_blank'
   noise_intensity:
-    word_shuffle: 3
-    word_dropout: 0.1
-    word_blank: 0.2
+    word_shuffle: 1
+    word_dropout: 0.05
+    word_blank: 0.1
   adversial_patience: 1
   batch_size: 32
-  lr: 0.001
+  lr: 0.0001
+  lr_lm:
+    0: 1.
+    50: 0.1
+    100: 0.
   lr adversial: 0.001
   n_epochs: 150
   pretraining_n_epochs: 20
+  scheduler: True
+  warmup_epochs: 3
   analyse_every: 50
   wandb: False
   early_stopping: False
@@ -30,11 +36,12 @@ dataset:
   language_similarity: 'bleu'  
   joint_tokenization: True
   size: 100000
-  vocab_size: 10000
+  vocab_size: 8000
   pad_index: 0
   bos1_index: 1
   bos2_index: 2
   eos_index: 3
+  blank_index: 4
   L:
     param: None
   L1:
@@ -47,19 +54,31 @@ dataset:
 
 models:
   encoder:
-    model: "lstm"
+    model: "transformer"
     batch_norm: False
     lstm:
       share_lang_emb: True # Share embedding layers between languages (enc / dec / proj)
       emb_dim: 512
       hidden_dim: 512
       dropout: 0.
-      n_enc_layers: 1
+      n_enc_layers: 4
       enc_dim: 512 # Latent space dimension
       proj_mode: 'last' # Projection mode (proj / pool / last)
+      freeze_enc_emb: False
+    transformer:
+      share_lang_emb: True # Share embedding layers between languages (enc / dec / proj)
+      emb_dim: 128
+      dropout: 0.
+      attention_dropout: 0.
+      relu_dropout: 0.
+      encoder_attention_heads: 8
+      n_enc_layers: 2
+      enc_dim: 128 # Latent space dimension
       freeze_enc_emb: False 
+      transformer_ffn_embed_dim: 512
+      encoder_normalize_before: False
   decoder:
-    model: "lstm"
+    model: "transformer"
     lstm:
       share_lang_emb: True # Share embedding layers between languages (enc / dec / proj)
       share_encdec_emb: True  # Share encoder embeddings / decoder embeddings
@@ -70,10 +89,29 @@ models:
       hidden_dim: 512
       lstm_proj: False # Projection layer between decoder LSTM and output layer
       dropout: 0.
-      n_dec_layers: 1
+      n_dec_layers: 4
       enc_dim: 512
       init_encoded: False # Initialize the decoder with the encoded state. Append it to each input embedding otherwise.
+      freeze_dec_emb: False
+    transformer:
+      share_lang_emb: True # Share embedding layers between languages (enc / dec / proj)
+      share_encdec_emb: True  # Share encoder embeddings / decoder embeddings
+      share_decpro_emb: False # Share decoder embeddings / decoder output projection
+      share_output_emb: True # Share decoder output embeddings
+      share_lstm_proj: False # Share projection layer between decoder LSTM and output layer)
+      emb_dim: 128
+      lstm_proj: False # Projection layer between decoder LSTM and output layer
+      dropout: 0.
+      attention_dropout: 0.
+      relu_dropout: 0.
+      n_dec_layers: 2
+      decoder_attention_heads: 8
+      enc_dim: 128
+      init_encoded: False # Initialize the decoder with the encoded state. Append it to each input embedding otherwise.
       freeze_dec_emb: False 
+      transformer_ffn_embed_dim: 512
+      beam_size: 0 # Beam width (<= 0 means greedy)
+      length_penalty: 1.0 # Length penalty: <1.0 favors shorter, >1.0 favors longer sentences
   discriminator:
     model: "mlp"
     mlp:

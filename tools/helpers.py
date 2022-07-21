@@ -1,9 +1,10 @@
 """
     blabla
 """
-
+import os
 import numpy as np
 from tqdm import tqdm
+from collections import defaultdict
 
 from gensim.models.callbacks import CallbackAny2Vec
 
@@ -25,10 +26,8 @@ def get_weights_name(configs):
     """
         Get weights name (!) from config file.
     """
-    weights_name = "checkpoints\\{}_{}".format(
-                                            configs['name'],
-                                            configs['training']['prop_gold']
-                                            )
+    weights_name = "{}_{}".format(configs['name'],
+                                  configs['training']['prop_gold'])
     if configs['training']['denoising']:
         weights_name += '_DAE'
     if configs['training']['adversial']:
@@ -39,7 +38,7 @@ def get_weights_name(configs):
         weights_name += '_share_dec'
     weights_name += '.pt'
     
-    return weights_name 
+    return os.path.join("checkpoints", weights_name) 
 
 def get_configs_name(configs):
     """
@@ -82,6 +81,38 @@ def binary_accuracy(preds: torch.tensor, targets: torch.Tensor) -> torch.Tensor:
 ######################################################################################################
 # Function from Lample et al. https://github.com/facebookresearch/UnsupervisedMT
 
+
+# fairseq_utils.py
+INCREMENTAL_STATE_INSTANCE_ID = defaultdict(lambda: 0)
+
+
+def _get_full_incremental_state_key(module_instance, key):
+    module_name = module_instance.__class__.__name__
+
+    # assign a unique ID to each module instance, so that incremental state is
+    # not shared across module instances
+    if not hasattr(module_instance, '_fairseq_instance_id'):
+        INCREMENTAL_STATE_INSTANCE_ID[module_name] += 1
+        module_instance._fairseq_instance_id = INCREMENTAL_STATE_INSTANCE_ID[module_name]
+
+    return '{}.{}.{}'.format(module_name, module_instance._fairseq_instance_id, key)
+
+
+def get_incremental_state(module, incremental_state, key):
+    """Helper for getting incremental state for an nn.Module."""
+    full_key = _get_full_incremental_state_key(module, key)
+    if incremental_state is None or full_key not in incremental_state:
+        return None
+    return incremental_state[full_key]
+
+
+def set_incremental_state(module, incremental_state, key, value):
+    """Helper for setting incremental state for an nn.Module."""
+    if incremental_state is not None:
+        full_key = _get_full_incremental_state_key(module, key)
+        incremental_state[full_key] = value
+
+# ???.py
 def get_mask(lengths: torch.Tensor, 
              slen: int, 
              all_words: bool, 

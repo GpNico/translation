@@ -266,10 +266,10 @@ class WMT14(Languages):
 
         # Load tokenizer and/or train tokenizer
         if configs['dataset']['joint_tokenization']:
-            tokenizer_name = "data\\tokenizer\\wmt14-{}-{}_voc_{}.json".format(
+            tokenizer_name = os.path.join("data","tokenizer","wmt14-{}-{}_voc_{}.json".format(
                                                                     self.L1_name, 
                                                                     self.L2_name,
-                                                                    configs['dataset']['vocab_size'])
+                                                                    configs['dataset']['vocab_size']))
 
             if os.path.exists(tokenizer_name):
                 print("Found tokenizer at {}".format(tokenizer_name))
@@ -288,6 +288,7 @@ class WMT14(Languages):
                 special_tokens[configs['dataset']['bos1_index']] = '[BOS1]'
                 special_tokens[configs['dataset']['bos2_index']] = '[BOS2]'
                 special_tokens[configs['dataset']['eos_index']] = '[EOS]'
+                #special_tokens[configs['dataset']['blank_index']] = '[BLANK]'
                 trainer = BpeTrainer(
                                 vocab_size = configs['dataset']['vocab_size'],
                                 special_tokens = special_tokens,
@@ -306,10 +307,10 @@ class WMT14(Languages):
                 print("Done! New tokenizer saved at {}".format(tokenizer_name))
 
             # if init embedding
-            self.embed_layer_name = "data\\embeddings\\wmt14-{}-{}_voc_{}.pt".format(
+            self.embed_layer_name = os.join.path("data","embeddings","wmt14-{}-{}_voc_{}.pt".format(
                                                     self.L1_name, 
                                                     self.L2_name,
-                                                    self.configs['dataset']['vocab_size'])
+                                                    self.configs['dataset']['vocab_size']))
             if os.path.exists(self.embed_layer_name):
                 print("Found Embedding Layer at {}".format(
                     self.embed_layer_name
@@ -429,11 +430,12 @@ class PCFG(Languages):
                                     )
                 self.tokenizer.pre_tokenizer = Whitespace()
 
-                special_tokens = [None, None, None, None]
+                special_tokens = [None, None, None, None, None]
                 special_tokens[configs['dataset']['pad_index']] = '[PAD]'
                 special_tokens[configs['dataset']['bos1_index']] = '[BOS1]'
                 special_tokens[configs['dataset']['bos2_index']] = '[BOS2]'
                 special_tokens[configs['dataset']['eos_index']] = '[EOS]'
+                special_tokens[configs['dataset']['blank_index']] = '[BLANK]'
                 trainer = BpeTrainer(
                                 vocab_size = configs['dataset']['vocab_size'],
                                 special_tokens = special_tokens,
@@ -604,10 +606,10 @@ class SimpleEN_FR(Languages):
 
         # Load tokenizer and/or train tokenizer
         if configs['dataset']['joint_tokenization']:
-            tokenizer_name = "data\\tokenizer\\simple-{}-{}_voc_{}.json".format(
+            tokenizer_name = os.path.join("data","tokenizer","simple-{}-{}_voc_{}.json".format(
                                                                     self.L1_name, 
                                                                     self.L2_name,
-                                                                    configs['dataset']['vocab_size'])
+                                                                    configs['dataset']['vocab_size']))
 
             if os.path.exists(tokenizer_name):
                 print("Found tokenizer at {}".format(tokenizer_name))
@@ -619,11 +621,12 @@ class SimpleEN_FR(Languages):
                                     )
                 self.tokenizer.pre_tokenizer = Whitespace()
 
-                special_tokens = [None, None, None, None]
+                special_tokens = [None, None, None, None, None]
                 special_tokens[configs['dataset']['pad_index']] = '[PAD]'
                 special_tokens[configs['dataset']['bos1_index']] = '[BOS1]'
                 special_tokens[configs['dataset']['bos2_index']] = '[BOS2]'
                 special_tokens[configs['dataset']['eos_index']] = '[EOS]'
+                special_tokens[configs['dataset']['blank_index']] = '[BLANK]'
                 trainer = BpeTrainer(
                                 vocab_size = configs['dataset']['vocab_size'],
                                 special_tokens = special_tokens,
@@ -642,10 +645,10 @@ class SimpleEN_FR(Languages):
                 print("Done! New tokenizer saved at {}".format(tokenizer_name))
 
             # if init embedding
-            self.embed_layer_name = "data\\embeddings\\simple-{}-{}_voc_{}.pt".format(
+            self.embed_layer_name = os.path.join("data","embeddings","simple-{}-{}_voc_{}.pt".format(
                                                     self.L1_name, 
                                                     self.L2_name,
-                                                    self.configs['dataset']['vocab_size'])
+                                                    self.configs['dataset']['vocab_size']))
             if os.path.exists(self.embed_layer_name):
                 print("Found Embedding Layer at {}".format(
                     self.embed_layer_name
@@ -763,7 +766,7 @@ class SimpleEN_FR(Languages):
         return [pair for pair in pairs if SimpleEN_FR.filterPair(pair)]
 
     def load_data(self):
-        lines = open('data\\fr_en_simple\\%s_%s.txt' % (self.L1_name, self.L2_name), encoding='utf-8').\
+        lines = open(os.path.join('data','fr_en_simple','%s_%s.txt' % (self.L1_name, self.L2_name)), encoding='utf-8').\
                      read().strip().split('\n')
         pairs = [[self.normalizeString(s) for s in l.split('\t')[:2]] for l in lines]
         return SimpleEN_FR.filterPairs(pairs)
