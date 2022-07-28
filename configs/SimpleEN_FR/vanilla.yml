@@ -6,6 +6,7 @@ training:
   denoising: True
   adversial: False
   lm_pretraining: True
+  initial_embeddings: 'word2vec'
   share_enc: 1 #Number of layers to share in the encoders
   share_dec: 1 #Number of layers to share in the decoders
   noise_function: 'shuffle_drop_blank'
@@ -18,11 +19,11 @@ training:
   lr: 0.0001
   lr_lm:
     0: 1.
-    50: 0.1
-    100: 0.
+    35: 0.1
+    70: 0.
   lr adversial: 0.001
-  n_epochs: 150
-  pretraining_n_epochs: 20
+  n_epochs: 100
+  pretraining_n_epochs: 30
   scheduler: True
   warmup_epochs: 3
   analyse_every: 50
@@ -36,7 +37,7 @@ dataset:
   language_similarity: 'bleu'  
   joint_tokenization: True
   size: 100000
-  vocab_size: 8000
+  vocab_size: 10000
   pad_index: 0
   bos1_index: 1
   bos2_index: 2
@@ -58,11 +59,11 @@ models:
     batch_norm: False
     lstm:
       share_lang_emb: True # Share embedding layers between languages (enc / dec / proj)
-      emb_dim: 512
-      hidden_dim: 512
+      emb_dim: 128
+      hidden_dim: 128
       dropout: 0.
       n_enc_layers: 4
-      enc_dim: 512 # Latent space dimension
+      enc_dim: 128 # Latent space dimension
       proj_mode: 'last' # Projection mode (proj / pool / last)
       freeze_enc_emb: False
     transformer:
@@ -85,12 +86,12 @@ models:
       share_decpro_emb: False # Share decoder embeddings / decoder output projection
       share_output_emb: True # Share decoder output embeddings
       share_lstm_proj: False # Share projection layer between decoder LSTM and output layer)
-      emb_dim: 512
-      hidden_dim: 512
+      emb_dim: 128
+      hidden_dim: 128
       lstm_proj: False # Projection layer between decoder LSTM and output layer
-      dropout: 0.
+      dropout: 0.1
       n_dec_layers: 4
-      enc_dim: 512
+      enc_dim: 128
       init_encoded: False # Initialize the decoder with the encoded state. Append it to each input embedding otherwise.
       freeze_dec_emb: False
     transformer:
@@ -101,9 +102,9 @@ models:
       share_lstm_proj: False # Share projection layer between decoder LSTM and output layer)
       emb_dim: 128
       lstm_proj: False # Projection layer between decoder LSTM and output layer
-      dropout: 0.
-      attention_dropout: 0.
-      relu_dropout: 0.
+      dropout: 0.1
+      attention_dropout: 0.1
+      relu_dropout: 0.1
       n_dec_layers: 2
       decoder_attention_heads: 8
       enc_dim: 128

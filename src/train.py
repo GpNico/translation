@@ -231,7 +231,8 @@ class BackTranslation:
                              tokenizer = self.languages.tokenizer)
 
     def evaluate_denoising(self, loader: torch.utils.data.DataLoader,
-                                 language: int) -> float:
+                                 language: int,
+                                 language_similarity: bool = False) -> float:
         """
             Evaluate the model performance on the 
             loader.
@@ -261,11 +262,28 @@ class BackTranslation:
                           'lengths': lengths}
 
                 # Forward pass
-                sentences_recons = self.model.denoising_autoencoding(inputs, 
-                                                                     language)
+                #sentences_recons = self.model.denoising_autoencoding(inputs, 
+                #                                                     language)
+                sentences_recons, scores = self.model.denoise(inputs,
+                                                              language,
+                                                              True)
+                if language_similarity:
+                    # Language Similarity
+                    if self.language_similarity is not None:
+                        self.language_similarity.add_batch(
+                                                sentences_recons, 
+                                                sentences[:,1:],
+                                                language
+                                                )
 
-                loss = self.criterion(sentences_recons, targets)
+                loss = self.criterion(scores, targets)
                 eval_loss += loss.item()
+
+            if language_similarity:
+                if self.language_similarity is not None:
+                    eval_sim = self.language_similarity.compute(
+                                                    language = language)
+                    return np.round(eval_loss / len(loader), 2), np.round(eval_sim, 2)
             
             return np.round(eval_loss / len(loader), 2)
 
@@ -510,7 +528,7 @@ class BackTranslation:
         return np.round(dis_loss / loader_size, 2), np.round(dis_acc / loader_size, 2)
 
     def evaluate(self, loader1: DataLoader, 
-                       loader2: DataLoader,
+                       loader2: DataLoader
                        ):    
         """
             Evaluate the model on the different tasks.
@@ -536,8 +554,12 @@ class BackTranslation:
         
 
         if self.configs['training']['denoising']:
-            metrics['DAE L1'] = self.evaluate_denoising(loader1, 1)
-            metrics['DAE L2'] = self.evaluate_denoising(loader2, 2)
+            metrics['DAE L1'] = self.evaluate_denoising(
+                                                loader1, 
+                                                1)
+            metrics['DAE L2'] = self.evaluate_denoising(
+                                                loader2, 
+                                                2)
         if self.configs['training']['adversial']:
             loss_dis, acc_dis = self.evaluate_adversial(loader1,
                                                         loader2)
@@ -804,6 +826,40 @@ class BackTranslation:
         if self.configs['training']['lm_pretraining']:
             print("\n ### LM PRETRAINING ### ")
             self._lm_pretraining(silent)
+
+            print("\n ### Post Pretraining Metrics ### ")
+            valid_metrics = self.evaluate(self.L1_valid_loader, 
+                                          self.L2_valid_loader
+                                         )
+
+            print("\t Total Loss : {}".format(
+                                            valid_metrics['total']
+                                            ))
+            print('\t BT : L1 Loss {} | L2 Loss {}'.format(
+                                            valid_metrics['BT L1'],
+                                            valid_metrics['BT L2']
+                                            ))
+            if self.configs['training']['denoising']:
+                print('\t DAE : L1 Loss {} | L2 Loss {}'.format(
+                                            valid_metrics['DAE L1'],
+                                            valid_metrics['DAE L2']
+                                            ))
+            if self.configs['training']['adversial']:
+                print('\t Discriminator : Loss {} | Acc. {}'.format(
+                                            valid_metrics['D Loss'],
+                                            valid_metrics['D Acc']
+                                            ))
+            print('\t L1 trans. err. {} | L2 trans. err.  {}'.format(
+                                            valid_metrics['Trans Err L1'],
+                                            valid_metrics['Trans Err L2']
+                                            ))
+            if self.language_similarity is not None:
+                print('\t L1 {} {} | L2 {} {}'.format(
+                                            self.configs['dataset']['language_similarity'].upper(),
+                                            valid_metrics['Trans Sim L1'],
+                                            self.configs['dataset']['language_similarity'].upper(),
+                                            valid_metrics['Trans Sim L2']
+                                            ))
 
         self._get_scheduler()
         
@@ -1085,12 +1141,14 @@ class BackTranslation:
                 
                 train_loss = np.round(epoch_loss/loader_size, 2)
 
-                valid_loss_denoising_1 = self.evaluate_denoising(
-                                                self.L1_valid_loader, 
-                                                1)
-                valid_loss_denoising_2 = self.evaluate_denoising(
-                                                self.L2_valid_loader, 
-                                                2)
+                valid_loss_denoising_1, valid_sim_denoising_1 = self.evaluate_denoising(
+                                                                    self.L1_valid_loader, 
+                                                                    1,
+                                                                    language_similarity = True)
+                valid_loss_denoising_2, valid_sim_denoising_2 = self.evaluate_denoising(
+                                                                    self.L2_valid_loader, 
+                                                                    2,
+                                                                    language_similarity = True)
 
                 if not(silent):
                     print("### Epoch {}/{} ###".format(epoch+1,
@@ -1101,6 +1159,12 @@ class BackTranslation:
                     print('\t DAE Valid : L1 Loss {} | L2 Loss {}'.format(
                                                                 valid_loss_denoising_1,
                                                                 valid_loss_denoising_2
+                                                                ))
+                    print('\t DAE Valid : L1 {} {} | L2 {} {}'.format(
+                                                                valid_sim_denoising_1,
+                                                                self.configs['dataset']['language_similarity'].upper(),
+                                                                valid_sim_denoising_2,
+                                                                self.configs['dataset']['language_similarity'].upper()
                                                                 ))
                                     
             return

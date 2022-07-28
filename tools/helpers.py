@@ -181,13 +181,26 @@ class WMT14Iterator():
 class callback(CallbackAny2Vec):
     '''Callback to print loss after each epoch.'''
 
-    def __init__(self, n_epochs):
+    def __init__(self, n_epochs, model_name):
         self.epoch = 0
         self.n_epochs = n_epochs
+        self.model_name = model_name
+        self.prev_loss = None
 
     def on_epoch_end(self, model):
-        print('FastText: epoch {}/{}'.format(self.epoch+1,
-                                             self.n_epochs))
+        if self.model_name == 'fasttext':
+            print('FastText: epoch {}/{}'.format(self.epoch+1,
+                                                           self.n_epochs))
+        elif self.model_name == 'word2vec':
+            loss = model.get_latest_training_loss()
+            if self.prev_loss is not None:
+                epoch_loss = loss - self.prev_loss
+            else:
+                epoch_loss = loss
+            print('Word2Vec : epoch {}/{} ; loss {}'.format(self.epoch, 
+                                                            self.n_epochs, 
+                                                            epoch_loss))
+            self.prev_loss = loss
         self.epoch += 1
 
 ######################################################################################################

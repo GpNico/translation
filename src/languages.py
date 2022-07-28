@@ -5,7 +5,7 @@ import numpy as np
 import os
 import unicodedata
 import re
-from gensim.models.fasttext import FastText
+from gensim.models import FastText, Word2Vec
 
 import torch
 from torch.utils.data import Dataset, DataLoader
@@ -256,6 +256,10 @@ class WMT14(Languages):
         # Max size
         self.max_size = configs['dataset']['size']
 
+        # Initial Embeddings
+        self.initial_embeddings = configs['training']['initial_embeddings']
+        assert self.initial_embeddings in ['fasttext', 'word2vec', '']
+
         # Load the dataset
         self.data = load_dataset("wmt14", 
                                  "{}-{}".format(
@@ -283,12 +287,12 @@ class WMT14(Languages):
                                     )
                 self.tokenizer.pre_tokenizer = Whitespace()
 
-                special_tokens = [None, None, None, None]
+                special_tokens = [None, None, None, None, None]
                 special_tokens[configs['dataset']['pad_index']] = '[PAD]'
                 special_tokens[configs['dataset']['bos1_index']] = '[BOS1]'
                 special_tokens[configs['dataset']['bos2_index']] = '[BOS2]'
                 special_tokens[configs['dataset']['eos_index']] = '[EOS]'
-                #special_tokens[configs['dataset']['blank_index']] = '[BLANK]'
+                special_tokens[configs['dataset']['blank_index']] = '[BLANK]'
                 trainer = BpeTrainer(
                                 vocab_size = configs['dataset']['vocab_size'],
                                 special_tokens = special_tokens,
@@ -307,24 +311,26 @@ class WMT14(Languages):
                 print("Done! New tokenizer saved at {}".format(tokenizer_name))
 
             # if init embedding
-            self.embed_layer_name = os.join.path("data","embeddings","wmt14-{}-{}_voc_{}.pt".format(
+            self.embed_layer_name = os.path.join("data","embeddings","wmt14-{}-{}-{}_voc_{}.pt".format(
+                                                    self.initial_embeddings,
                                                     self.L1_name, 
                                                     self.L2_name,
                                                     self.configs['dataset']['vocab_size']))
-            if os.path.exists(self.embed_layer_name):
-                print("Found Embedding Layer at {}".format(
-                    self.embed_layer_name
-                ))
-            else:
-                self._compute_fasttext_embeddings()
-                exit(0)
+            if self.initial_embeddings != '':
+                if os.path.exists(self.embed_layer_name):
+                    print("Found Embedding Layer at {}".format(
+                        self.embed_layer_name
+                    ))
+                else:
+                    self._compute_embeddings()
+                    exit(0)
         else:
             tokenizer_names = ["data\\tokenizer\\wmt14-{}.json".format(name)\
                                  for name in [self.L1_name, self.L2_name]]
             raise Exception("Separate Tokenizaton is Not Implemented Yet!")
 
-    def _compute_fasttext_embeddings(self):
-        print("Computing FastText embeddings...")
+    def _compute_embeddings(self):
+        print("Computing {} embeddings...".format(self.initial_embeddings))
 
         # Load and tokeniz the corpus
         tokenized_iterator = WMT14Iterator(data = self.data['train'],
@@ -335,21 +341,35 @@ class WMT14(Languages):
         enc_model = self.configs['models']['encoder']['model']
         emb_dim = self.configs['models']['encoder'][enc_model]['emb_dim']
         # Taken from Lample
-        min_count = 0
+        min_count = 1
         window_size = 5
         negative = 10
         n_epochs = 10
 
         # Train model
-        print("Training FastText model...")
-        ft_model = FastText(tokenized_iterator,
-                            vector_size=emb_dim,
-                            window=window_size,
-                            min_count=min_count,
-                            negative=negative,
-                            sg=1, # SkipGram
-                            epochs=n_epochs,
-                            callbacks=[callback(n_epochs = n_epochs)])
+        print("Training {} model...".format(self.initial_embeddings))
+
+        if self.initial_embeddings == 'fasttext':
+            ft_model = FastText(tokenized_iterator,
+                                vector_size=emb_dim,
+                                window=window_size,
+                                min_count=min_count,
+                                negative=negative,
+                                sg=1, # SkipGram
+                                epochs=n_epochs,
+                                #compute_loss=True,
+                                callbacks=[callback(n_epochs = n_epochs,
+                                                    model_name = 'fasttext')])
+        elif self.initial_embeddings == 'word2vec':
+            ft_model = Word2Vec(tokenized_iterator,
+                                vector_size=emb_dim,
+                                window=window_size,
+                                min_count=min_count,
+                                negative=negative,
+                                epochs=n_epochs,
+                                compute_loss=True,
+                                callbacks=[callback(n_epochs = n_epochs,
+                                                    model_name = 'word2vec')])
 
         # Get embedding matrix
         embed_layer = nn.Embedding(self.configs['dataset']['vocab_size'], 
@@ -406,6 +426,10 @@ class PCFG(Languages):
         # Max size
         self.max_size = configs['dataset']['size']
 
+        # Initial Embeddings
+        self.initial_embeddings = configs['training']['initial_embeddings']
+        assert self.initial_embeddings in ['fasttext', 'word2vec', '']
+
         # Load the dataset
         self.data = self.load_data() # List of pairs
         print("Loaded %s pairs!" % len(self.data))
@@ -456,17 +480,19 @@ class PCFG(Languages):
             # if init embedding
             self.embed_layer_name = os.path.join("data",
                                                  "embeddings",
-                                                 "pcfg-{}-{}_voc_{}.pt".format(
+                                                 "pcfg-{}-{}-{}_voc_{}.pt".format(
+                                                    self.initial_embeddings,
                                                     self.L1_name, 
                                                     self.L2_name,
                                                     self.configs['dataset']['vocab_size'])
                                                 )
-            if os.path.exists(self.embed_layer_name):
-                print("Found Embedding Layer at {}".format(
-                    self.embed_layer_name
-                ))
-            else:
-                self._compute_fasttext_embeddings()
+            if self.initial_embeddings != '':
+                if os.path.exists(self.embed_layer_name):
+                    print("Found Embedding Layer at {}".format(
+                        self.embed_layer_name
+                    ))
+                else:
+                    self._compute_embeddings()
         else:
             tokenizer_names = ["data\\tokenizer\\pcfg-{}.json".format(name)\
                                  for name in [self.L1_name, self.L2_name]]
@@ -490,8 +516,8 @@ class PCFG(Languages):
 
         return data_train, data_valid, data_test
 
-    def _compute_fasttext_embeddings(self):
-        print("Computing FastText embeddings...")
+    def _compute_embeddings(self):
+        print("Computing {} embeddings...".format(self.initial_embeddings))
 
         # Load and tokeniz the corpus
         token_tokenized_corpus = self._load_tokenized_corpus()
@@ -500,21 +526,37 @@ class PCFG(Languages):
         enc_model = self.configs['models']['encoder']['model']
         emb_dim = self.configs['models']['encoder'][enc_model]['emb_dim']
         # Taken from Lample
-        min_count = 0
+        min_count = 1
         window_size = 5
         negative = 10
-        n_epochs = 10
+        n_epochs = 300
 
         # Train model
-        print("Training FastText model...")
-        ft_model = FastText(token_tokenized_corpus,
-                            vector_size=emb_dim,
-                            window=window_size,
-                            min_count=min_count,
-                            negative=negative,
-                            sg=1, # SkipGram
-                            epochs=n_epochs,
-                            callbacks=[callback(n_epochs = n_epochs)])
+        print("Training {} model...".format(self.initial_embeddings))
+        
+        if self.initial_embeddings == 'fasttext':
+            ft_model = FastText(token_tokenized_corpus,
+                                vector_size=emb_dim,
+                                window=window_size,
+                                min_count=min_count,
+                                negative=negative,
+                                sg=1, # SkipGram
+                                epochs=n_epochs,
+                                #compute_loss=True,
+                                callbacks=[callback(n_epochs = n_epochs,
+                                                    model_name = 'fasttext')])
+        elif self.initial_embeddings == 'word2vec':
+            ft_model = Word2Vec(token_tokenized_corpus,
+                                vector_size=emb_dim,
+                                window=window_size,
+                                min_count=min_count,
+                                negative=negative,
+                                epochs=n_epochs,
+                                compute_loss=True,
+                                callbacks=[callback(n_epochs = n_epochs,
+                                                    model_name = 'word2vec')])
+        else:
+            raise Exception("{} embeddings is not implemented yet.".format(self.initial_embeddings))
 
         # Get embedding matrix
         embed_layer = nn.Embedding(self.configs['dataset']['vocab_size'], 
@@ -600,6 +642,10 @@ class SimpleEN_FR(Languages):
         # Max size
         self.max_size = configs['dataset']['size']
 
+        # Initial Embeddings
+        self.initial_embeddings = configs['training']['initial_embeddings']
+        assert self.initial_embeddings in ['fasttext', 'word2vec', '']
+
         # Load the dataset
         self.data = self.load_data() # List of pairs
         print("Loaded %s pairs!" % len(self.data))
@@ -645,16 +691,18 @@ class SimpleEN_FR(Languages):
                 print("Done! New tokenizer saved at {}".format(tokenizer_name))
 
             # if init embedding
-            self.embed_layer_name = os.path.join("data","embeddings","simple-{}-{}_voc_{}.pt".format(
+            self.embed_layer_name = os.path.join("data","embeddings","simple-{}-{}-{}_voc_{}.pt".format(
+                                                    self.initial_embeddings,
                                                     self.L1_name, 
                                                     self.L2_name,
                                                     self.configs['dataset']['vocab_size']))
-            if os.path.exists(self.embed_layer_name):
-                print("Found Embedding Layer at {}".format(
-                    self.embed_layer_name
-                ))
-            else:
-                self._compute_fasttext_embeddings()
+            if self.initial_embeddings != '':
+                if os.path.exists(self.embed_layer_name):
+                    print("Found Embedding Layer at {}".format(
+                        self.embed_layer_name
+                    ))
+                else:
+                    self._compute_embeddings()
         else:
             tokenizer_names = ["data\\tokenizer\\simple_en_fr-{}.json".format(name)\
                                  for name in [self.L1_name, self.L2_name]]
@@ -678,8 +726,8 @@ class SimpleEN_FR(Languages):
 
         return data_train, data_valid, data_test
 
-    def _compute_fasttext_embeddings(self):
-        print("Computing FastText embeddings...")
+    def _compute_embeddings(self):
+        print("Computing {} embeddings...".format(self.initial_embeddings))
 
         # Load and tokeniz the corpus
         token_tokenized_corpus = self._load_tokenized_corpus()
@@ -688,21 +736,37 @@ class SimpleEN_FR(Languages):
         enc_model = self.configs['models']['encoder']['model']
         emb_dim = self.configs['models']['encoder'][enc_model]['emb_dim']
         # Taken from Lample
-        min_count = 0
+        min_count = 1
         window_size = 5
         negative = 10
-        n_epochs = 10
+        n_epochs = 5000
 
         # Train model
-        print("Training FastText model...")
-        ft_model = FastText(token_tokenized_corpus,
-                            vector_size=emb_dim,
-                            window=window_size,
-                            min_count=min_count,
-                            negative=negative,
-                            sg=1, # SkipGram
-                            epochs=n_epochs,
-                            callbacks=[callback(n_epochs = n_epochs)])
+        print("Training {} model...".format(self.initial_embeddings))
+
+        if self.initial_embeddings == 'fasttext':
+            ft_model = FastText(token_tokenized_corpus,
+                                vector_size=emb_dim,
+                                window=window_size,
+                                min_count=min_count,
+                                negative=negative,
+                                sg=1, # SkipGram
+                                epochs=n_epochs,
+                                #compute_loss=True,
+                                callbacks=[callback(n_epochs = n_epochs,
+                                                    model_name = 'fasttext')])
+        elif self.initial_embeddings == 'word2vec':
+            ft_model = Word2Vec(token_tokenized_corpus,
+                                vector_size=emb_dim,
+                                window=window_size,
+                                min_count=min_count,
+                                negative=negative,
+                                epochs=n_epochs,
+                                compute_loss=True,
+                                callbacks=[callback(n_epochs = n_epochs,
+                                                    model_name = 'word2vec')])
+        else:
+            raise Exception("{} embeddings is not implemented yet.".format(self.initial_embeddings))
 
         # Get embedding matrix
         embed_layer = nn.Embedding(self.configs['dataset']['vocab_size'], 

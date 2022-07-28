@@ -180,6 +180,30 @@ class BackTranslator(nn.Module):
                         scores = translation
                 return translation, scores
 
+    def denoise(self, inputs: dict,
+                      language: int,
+                      output_scores: bool = False) -> torch.Tensor:
+        """
+            Denoise sentences (from language)
+        """
+        with torch.no_grad():
+            scores = None
+            m = self.r(inputs, language)
+                
+            if self.stochastic:
+                translation, _, _ = self.s.generate(m, language)
+                if output_scores:
+                    m['y'] = inputs['x']
+                    scores = self.s(m, language)
+            else:
+                translation = self.s(m, language)
+                if output_scores:
+                    scores = translation
+            return translation, scores
+    
+
+    
+
 ############################################################################
 ##                                                                        ##
 ##                        GOLD ENCODERS/DECODERS                          ##
@@ -467,7 +491,8 @@ class LSTMEnc(nn.Module):
             print("Sharing encoder input embeddings")
             layer_0 = nn.Embedding(self.n_words[0], self.emb_dim, padding_idx=self.pad_index)
             # Loading pre-computed embeddings weights
-            self.embed_layer_name = "data\\embeddings\\simple-{}-{}_voc_{}.pt".format(
+            self.embed_layer_name = "data\\embeddings\\simple-{}-{}-{}_voc_{}.pt".format(
+                                                    configs['training']['initial_embeddings'],
                                                     configs['dataset']['L1']['name'], 
                                                     configs['dataset']['L2']['name'],
                                                     configs['dataset']['vocab_size'])
@@ -919,7 +944,8 @@ class TransformerEnc(nn.Module):
             print("Sharing encoder input embeddings")
             layer_0 = Embedding(self.n_words[0], self.emb_dim, padding_idx=self.pad_index)
             # Loading pre-computed embeddings weights
-            self.embed_layer_name = "data\\embeddings\\simple-{}-{}_voc_{}.pt".format(
+            self.embed_layer_name = "data\\embeddings\\simple-{}-{}-{}_voc_{}.pt".format(
+                                                    configs['training']['initial_embeddings'],
                                                     configs['dataset']['L1']['name'], 
                                                     configs['dataset']['L2']['name'],
                                                     configs['dataset']['vocab_size'])
@@ -1167,7 +1193,7 @@ class TransformerDec(nn.Module):
             encoder_out_dict['encoder_padding_mask'] = \
                 encoder_out_dict['encoder_padding_mask'].index_select(0, new_order)
 
-    def generate(self, inputs, language, sample=False, temperature=None):
+    def generate(self, inputs, language, sample=True, temperature=1.):
         """
         Generate a sentence from a given initial state.
         Input:

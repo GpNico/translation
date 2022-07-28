@@ -6,6 +6,7 @@ training:
   denoising: True
   adversial: False
   lm_pretraining: True
+  initial_embeddings: 'word2vec'
   share_enc: 1 #Number of layers to share in the encoders
   share_dec: 1 #Number of layers to share in the decoders
   noise_function: 'shuffle_drop_blank'
