@@ -1,0 +1,6 @@
+[submodule "lample/NMT/tools/fastBPE"]
+	path = lample/NMT/tools/fastBPE
+	url = https://github/glample/fastBPE
+[submodule "lample/NMT/tools/fastText"]
+	path = lample/NMT/tools/fastText
+	url = https://github/facebookresearch/fastText
