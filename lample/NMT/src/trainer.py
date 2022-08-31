@@ -747,6 +747,9 @@ class TrainerMT(MultiprocessingEventLoop):
             s_iter = "%7i - " % self.n_iter
             s_stat = ' || '.join(['{}: {:7.4f}'.format(k, np.mean(self.stats[l]))
                                  for k, l in mean_loss if len(self.stats[l]) > 0])
+                              
+            stats_to_log = {k: np.mean(self.stats[l]) for k, l in mean_loss if len(self.stats[l]) > 0}
+            
             for _, l in mean_loss:
                 del self.stats[l][:]
 
@@ -771,6 +774,9 @@ class TrainerMT(MultiprocessingEventLoop):
 
             # log speed + stats
             logger.info(s_iter + s_speed + s_stat + s_lr + s_time)
+            
+            if self.params.wandb:
+            	wandb.log({**stats_to_log})
 
     def save_model(self, name):
         """

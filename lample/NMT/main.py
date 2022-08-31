@@ -9,11 +9,17 @@ import time
 import json
 import argparse
 
+import wandb
+
 from src.data.loader import check_all_data_params, load_data
 from src.utils import bool_flag, initialize_exp
 from src.model import check_mt_model_params, build_mt_model
 from src.trainer import TrainerMT
 from src.evaluator import EvaluatorMT
+
+## /!\ Dangerous But Convenient /!\
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 def get_parser():
@@ -227,6 +233,11 @@ def get_parser():
                         help="Beam width (<= 0 means greedy)")
     parser.add_argument("--length_penalty", type=float, default=1.0,
                         help="Length penalty: <1.0 favors shorter, >1.0 favors longer sentences")
+    # custom
+    parser.add_argument("--wandb",
+    			 help="Store training data on wandb.",
+    			 action="store_true")
+    
     return parser
 
 
@@ -246,6 +257,14 @@ def main(params):
     trainer.reload_checkpoint()
     trainer.test_sharing()  # check parameters sharing
     evaluator = EvaluatorMT(trainer, data, params)
+    
+    # wandb
+    if params.wandb:
+    	wandb.init(
+    		project='Lample UMT',
+    		name='test',
+    		config=params
+    		)
 
     # evaluation mode
     if params.eval_only:
@@ -349,6 +368,9 @@ def main(params):
         trainer.end_epoch(scores)
         trainer.test_sharing()
 
+    if params.wandb:
+    	wandb.finish()
+    	       
 
 if __name__ == '__main__':
     parser = get_parser()
