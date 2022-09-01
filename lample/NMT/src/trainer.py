@@ -19,6 +19,8 @@ from .model import build_mt_model
 from .multiprocessing_event_loop import MultiprocessingEventLoop
 from .test import test_sharing
 
+import wandb
+
 
 logger = getLogger()
 
