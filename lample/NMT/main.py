@@ -242,6 +242,14 @@ def get_parser():
 
 
 def main(params):
+    # wandb
+    if params.wandb:
+    	wandb.init(
+    		project='Lample UMT',
+    		name='test',
+    		config=params
+    		)
+
     # check parameters
     assert params.exp_name
     check_all_data_params(params)
@@ -257,14 +265,6 @@ def main(params):
     trainer.reload_checkpoint()
     trainer.test_sharing()  # check parameters sharing
     evaluator = EvaluatorMT(trainer, data, params)
-    
-    # wandb
-    if params.wandb:
-    	wandb.init(
-    		project='Lample UMT',
-    		name='test',
-    		config=params
-    		)
 
     # evaluation mode
     if params.eval_only:
