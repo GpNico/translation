@@ -133,8 +133,8 @@ if ! [[ -f "$SRC_RAW" && -f "$TGT_RAW" ]]; then
   echo "Downloading Artificial Grammars..."
 
   cd $GRAMMARS_PATH
-  gdown https://drive.google.com/uc?id=1xkRkhIAyxVRfnU-_j5WWggVsDymyC4Pu
-  unrar e permuted_samples.rar
+  gdown https://drive.google.com/uc?id=1tNzIr3JHe0JRXFa87qGnG46V-QrF7dJQ
+  unzip -j permuted_samples.zip
 fi
 
 
@@ -204,16 +204,16 @@ if ! [[ -f "$SRC_VALID" && -f "$TGT_VALID" ]]; then
   echo "Downloading Valid data..."
 
   cd $GRAMMARS_PATH/valid
-  gdown https://drive.google.com/uc?id=1baj7eAqc-_IFjbwzopnCWsxAZmXNn5Mb
-  unrar e permuted_samples_valid.rar
+  gdown https://drive.google.com/uc?id=10_j0MK8jiOe8C0JvAuPz-Dw5Zm_Lqkn3
+  unzip -j permuted_samples_valid.zip
 fi
 
 if ! [[ -f "$SRC_TEST" && -f "$TGT_TEST" ]]; then
   echo "Downloading Test data..."
 
   cd $GRAMMARS_PATH/test
-  gdown https://drive.google.com/uc?id=1azpW7nY9WlW2p2Enf-7KOjGjXxy8Q9hP
-  unrar e permuted_samples_test.rar
+  gdown https://drive.google.com/uc?id=1zd_fL7RIfCp8YE9zz8tMIbUuOiBROd8P
+  unzip -j permuted_samples_test.zip
 fi
 
 cd $GRAMMARS_PATH

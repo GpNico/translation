@@ -356,6 +356,11 @@ def main(params):
 
         # evaluate discriminator / perplexity / BLEU
         scores = evaluator.run_all_evals(trainer.epoch)
+        
+        # wandb
+        scores_to_log = {k: v for k,v in scores.items() if 'bleu_' in k}
+        if params.wandb:
+            wandb.log({**scores_to_log})
 
         # print / JSON log
         for k, v in scores.items():
