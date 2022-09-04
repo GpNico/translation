@@ -246,7 +246,7 @@ def main(params):
     if params.wandb:
     	wandb.init(
     		project='Lample UMT',
-    		name='test',
+    		name=params.exp_name,
     		config=params
     		)
 
