@@ -56,14 +56,14 @@ FASTTEXT=$FASTTEXT_DIR/fasttext
 # files full paths
 SRC_RAW=$GRAMMARS_PATH/sample_$SRC_NAME.txt
 TGT_RAW=$GRAMMARS_PATH/sample_$TGT_NAME.txt
-SRC_TOK=$GRAMMARS_PATH/sample_src_$SRC_NAME.tok
-TGT_TOK=$GRAMMARS_PATH/sample_tgt_$TGT_NAME.tok
+SRC_TOK=$GRAMMARS_PATH/sample_$SRC_NAME.tok
+TGT_TOK=$GRAMMARS_PATH/sample_$TGT_NAME.tok
 BPE_CODES=$GRAMMARS_PATH/bpe_codes
 
 CONCAT_BPE=$GRAMMARS_PATH/all.$SRC_NAME-$TGT_NAME.$CODES
 
-SRC_VOCAB=$GRAMMARS_PATH/vocab.src_$SRC_NAME.$CODES
-TGT_VOCAB=$GRAMMARS_PATH/vocab.tgt_$TGT_NAME.$CODES
+SRC_VOCAB=$GRAMMARS_PATH/vocab.$SRC_NAME.$CODES
+TGT_VOCAB=$GRAMMARS_PATH/vocab.$TGT_NAME.$CODES
 FULL_VOCAB=$GRAMMARS_PATH/vocab.$SRC_NAME-$TGT_NAME.$CODES
 
 SRC_VALID=$GRAMMARS_PATH/valid/sample_$SRC_NAME.txt
@@ -71,10 +71,10 @@ TGT_VALID=$GRAMMARS_PATH/valid/sample_$TGT_NAME.txt
 SRC_TEST=$GRAMMARS_PATH/test/sample_$SRC_NAME.txt
 TGT_TEST=$GRAMMARS_PATH/test/sample_$TGT_NAME.txt
 
-SRC_VALID_TOK=$GRAMMARS_PATH/valid/sample_src_$SRC_NAME.tok
-TGT_VALID_TOK=$GRAMMARS_PATH/valid/sample_tgt_$TGT_NAME.tok
-SRC_TEST_TOK=$GRAMMARS_PATH/test/sample_src_$SRC_NAME.tok
-TGT_TEST_TOK=$GRAMMARS_PATH/test/sample_tgt_$TGT_NAME.tok
+SRC_VALID_TOK=$GRAMMARS_PATH/valid/sample_$SRC_NAME.tok
+TGT_VALID_TOK=$GRAMMARS_PATH/valid/sample_$TGT_NAME.tok
+SRC_TEST_TOK=$GRAMMARS_PATH/test/sample_$SRC_NAME.tok
+TGT_TEST_TOK=$GRAMMARS_PATH/test/sample_$TGT_NAME.tok
 
 #
 # Download and install tools
@@ -287,6 +287,6 @@ echo "Concatenated data in: $CONCAT_BPE"
 
 if ! [[ -f "$CONCAT_BPE.vec" ]]; then
   echo "Training fastText on $CONCAT_BPE..."
-  $FASTTEXT skipgram -epoch $N_EPOCHS -minCount 0 -dim 128 -thread $N_THREADS -ws 5 -neg 10 -input $CONCAT_BPE -output $CONCAT_BPE
+  $FASTTEXT skipgram -epoch $N_EPOCHS -minCount 0 -dim 512 -thread $N_THREADS -ws 5 -neg 10 -input $CONCAT_BPE -output $CONCAT_BPE
 fi
 echo "Cross-lingual embeddings in: $CONCAT_BPE.vec"
