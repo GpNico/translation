@@ -310,7 +310,7 @@ def check_all_data_params(params):
     """
     # check languages
     params.langs = params.langs.split(',')
-    assert len(params.langs) == len(set(params.langs)) >= 2
+    #assert len(params.langs) == len(set(params.langs)) >= 2
     assert sorted(params.langs) == params.langs
     params.id2lang = {k: v for k, v in enumerate(sorted(params.langs))}
     params.lang2id = {k: v for v, k in params.id2lang.items()}
@@ -324,6 +324,10 @@ def check_all_data_params(params):
         assert all(lang in params.langs for lang in params.mono_dataset.keys())
         assert all(len(v.split(',')) == 3 for v in params.mono_dataset.values())
         params.mono_dataset = {k: tuple(v.split(',')) for k, v in params.mono_dataset.items()}
+        print("############ DEBUG ############")
+        for paths in params.mono_dataset.values():
+            for i, path in enumerate(paths):
+                print("i: {} ; path: {}".format(i, path))
         assert all(all(((i > 0 and path == '') or os.path.isfile(path)) for i, path in enumerate(paths))
                    for paths in params.mono_dataset.values())
 
