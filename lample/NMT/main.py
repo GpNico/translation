@@ -10,6 +10,7 @@ import json
 import argparse
 
 import wandb
+import torch
 
 from src.data.loader import check_all_data_params, load_data
 from src.utils import bool_flag, initialize_exp
@@ -249,6 +250,12 @@ def main(params):
     		name=params.exp_name,
     		config=params
     		)
+    		
+    # Check CUDA and all
+    print('\nIs CUDA available: {}'.format(torch.cuda.is_available()))
+    print('CUDA version: {}'.format(torch.version.cuda))
+    print('Number of devices: {}'.format(torch.device_count()))
+    print('Device name: {}\n'.format(torch.cuda.get_device_name("cuda:0")))
 
     # check parameters
     assert params.exp_name
