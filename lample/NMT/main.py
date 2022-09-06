@@ -254,7 +254,7 @@ def main(params):
     # Check CUDA and all
     print('\nIs CUDA available: {}'.format(torch.cuda.is_available()))
     print('CUDA version: {}'.format(torch.version.cuda))
-    print('Number of devices: {}'.format(torch.device_count()))
+    print('Number of devices: {}'.format(torch.cuda.device_count()))
     print('Device name: {}\n'.format(torch.cuda.get_device_name("cuda:0")))
 
     # check parameters
