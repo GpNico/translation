@@ -35,6 +35,8 @@ GRAMMARS_PATH=$DATA_PATH/artificial_grammars
 mkdir -p $TOOLS_PATH
 mkdir -p $DATA_PATH
 mkdir -p $GRAMMARS_PATH
+mkdir -p $GRAMMARS_PATH/source
+mkdir -p $GRAMMARS_PATH/target
 mkdir -p $GRAMMARS_PATH/valid
 mkdir -p $GRAMMARS_PATH/test
 
@@ -54,10 +56,10 @@ FASTTEXT_DIR=$TOOLS_PATH/fastText
 FASTTEXT=$FASTTEXT_DIR/fasttext
 
 # files full paths
-SRC_RAW=$GRAMMARS_PATH/sample_$SRC_NAME.txt
-TGT_RAW=$GRAMMARS_PATH/sample_$TGT_NAME.txt
-SRC_TOK=$GRAMMARS_PATH/sample_s$SRC_NAME.tok
-TGT_TOK=$GRAMMARS_PATH/sample_t$TGT_NAME.tok
+SRC_RAW=$GRAMMARS_PATH/source/sample_$SRC_NAME.txt
+TGT_RAW=$GRAMMARS_PATH/target/sample_$TGT_NAME.txt
+SRC_TOK=$GRAMMARS_PATH/source/sample_s$SRC_NAME.tok
+TGT_TOK=$GRAMMARS_PATH/target/sample_t$TGT_NAME.tok
 BPE_CODES=$GRAMMARS_PATH/bpe_codes
 
 CONCAT_BPE=$GRAMMARS_PATH/all.s$SRC_NAME-t$TGT_NAME.$CODES
@@ -133,9 +135,15 @@ if ! [[ -f "$SRC_RAW" && -f "$TGT_RAW" ]]; then
 
   echo "Downloading Artificial Grammars..."
 
-  cd $GRAMMARS_PATH
+  cd $GRAMMARS_PATH/source
+  
   gdown https://drive.google.com/uc?id=1tNzIr3JHe0JRXFa87qGnG46V-QrF7dJQ
-  unzip -j permuted_samples.zip
+  unzip -j permuted_samples_source.zip
+  
+  cd $GRAMMARS_PATH/target
+  
+  gdown https://drive.google.com/uc?id=1ak6eXWB054Y3Zg3wQc0n2zjEFdLW4-cm
+  unzip -j permuted_samples_target.zip
 fi
 
 
