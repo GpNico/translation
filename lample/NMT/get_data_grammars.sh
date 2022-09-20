@@ -58,8 +58,8 @@ FASTTEXT=$FASTTEXT_DIR/fasttext
 # files full paths
 SRC_RAW=$GRAMMARS_PATH/source/sample_$SRC_NAME.txt
 TGT_RAW=$GRAMMARS_PATH/target/sample_$TGT_NAME.txt
-SRC_TOK=$GRAMMARS_PATH/source/sample_s$SRC_NAME.tok
-TGT_TOK=$GRAMMARS_PATH/target/sample_t$TGT_NAME.tok
+SRC_TOK=$GRAMMARS_PATH/sample_s$SRC_NAME.tok
+TGT_TOK=$GRAMMARS_PATH/sample_t$TGT_NAME.tok
 BPE_CODES=$GRAMMARS_PATH/bpe_codes
 
 CONCAT_BPE=$GRAMMARS_PATH/all.s$SRC_NAME-t$TGT_NAME.$CODES
