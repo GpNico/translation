@@ -8,6 +8,7 @@
 import time
 import json
 import argparse
+import os
 
 import wandb
 import torch
@@ -16,7 +17,7 @@ from src.data.loader import check_all_data_params, load_data
 from src.utils import bool_flag, initialize_exp
 from src.model import check_mt_model_params, build_mt_model
 from src.trainer import TrainerMT
-from src.evaluator import EvaluatorMT
+from src.evaluator import EvaluatorMT, eval_moses_bleu
 
 ## /!\ Dangerous But Convenient /!\
 import warnings
@@ -250,6 +251,13 @@ def main(params):
     		name=params.exp_name,
     		config=params
     		)
+    	
+    # Compute baseline BLEU
+    src_lang, tgt_lang = params.langs.split(',')
+    hyp_path = os.path.join(os.getcwd(), 'data/artificial_grammars/test/sample_{}.txt'.format(src_lang[1:]))
+    ref_path = os.path.join(os.getcwd(), 'data/artificial_grammars/test/sample_{}.txt'.format(tgt_lang[1:]))
+    bleu = eval_moses_bleu(ref_path, hyp_path)
+    print("BASELINE BLEU %s %s : %f" % (hyp_path, ref_path, bleu))
     		
     # Check CUDA and all
     print('\nIs CUDA available: {}'.format(torch.cuda.is_available()))

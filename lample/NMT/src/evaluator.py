@@ -126,7 +126,7 @@ class EvaluatorMT(object):
         """
         Evaluate lang1 -> lang2 perplexity and BLEU scores.
         """
-        logger.info("Evaluating %s -> %s (%s) ..." % (lang1, lang2, data_type))
+        logger.info("Evaluating %s -> %s (%s) ..." % (lang1, lang2, data_type)) # ex: (fr, en, valid)
         assert data_type in ['valid', 'test']
         self.encoder.eval()
         self.decoder.eval()
@@ -163,7 +163,7 @@ class EvaluatorMT(object):
 
         # hypothesis / reference paths
         hyp_name = 'hyp{0}.{1}-{2}.{3}.txt'.format(scores['epoch'], lang1, lang2, data_type)
-        hyp_path = os.path.join(params.dump_path, hyp_name)
+        hyp_path = os.path.join(params.dump_path, hyp_name) # ex: dumped/GR_s000000_t010000/mt9dufwzms/hyp40.s000000-t010000.valid
         ref_path = params.ref_paths[(lang1, lang2, data_type)]
 
         # export sentences to hypothesis file / restore BPE segmentation
