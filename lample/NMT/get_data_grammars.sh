@@ -298,3 +298,8 @@ if ! [[ -f "$CONCAT_BPE.vec" ]]; then
   $FASTTEXT skipgram -epoch $N_EPOCHS -minCount 0 -dim 512 -thread $N_THREADS -ws 5 -neg 10 -input $CONCAT_BPE -output $CONCAT_BPE
 fi
 echo "Cross-lingual embeddings in: $CONCAT_BPE.vec"
+
+# Deletin bin file because it is too big!
+echo "Deleting $CONCAT_BPE.bin"
+rm -r -f $CONCAT_BPE.bin
+echo "Done!"
