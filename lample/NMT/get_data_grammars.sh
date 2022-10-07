@@ -147,7 +147,7 @@ echo "fastText compiled in: $FASTTEXT"
 #
 # Download monolingual data
 #
-if ! [[ -f "$SRC_RAW" && -f "$TGT_RAW" ]]; then
+if ! [[ -f "$SRC_RAW" ]]; then
   echo "Installing gdown..."
   
   pip install gdown
@@ -158,7 +158,9 @@ if ! [[ -f "$SRC_RAW" && -f "$TGT_RAW" ]]; then
   
   gdown https://drive.google.com/uc?id=1tNzIr3JHe0JRXFa87qGnG46V-QrF7dJQ
   unzip -j permuted_samples_source.zip
-  
+fi
+ 
+if ! [[ -f "$TGT_RAW" ]]; then
   cd $GRAMMARS_PATH/$TARGET_DIR
   
   if [ $LEXICON -eq 0 ];
@@ -237,13 +239,14 @@ echo "$TGT_NAME binarized data in: $TGT_TOK.$CODES.pth"
 # Download parallel data (for evaluation only)
 #
 
-if ! [[ -f "$SRC_VALID" && -f "$TGT_VALID" ]]; then
+if ! [[ -f "$SRC_VALID" ]]; then
   echo "Downloading Valid data..."
 
   cd $GRAMMARS_PATH/valid
   gdown https://drive.google.com/uc?id=10_j0MK8jiOe8C0JvAuPz-Dw5Zm_Lqkn3
   unzip -j permuted_samples_valid.zip
-  
+fi
+if ! [[ -f "$TGT_VALID" ]]; then
   if [ $LEXICON -eq 1 ];
   then
     cd $GRAMMARS_PATH/$VALID_DIR
@@ -252,13 +255,14 @@ if ! [[ -f "$SRC_VALID" && -f "$TGT_VALID" ]]; then
   fi
 fi
 
-if ! [[ -f "$SRC_TEST" && -f "$TGT_TEST" ]]; then
+if ! [[ -f "$SRC_TEST" ]]; then
   echo "Downloading Test data..."
 
   cd $GRAMMARS_PATH/test
   gdown https://drive.google.com/uc?id=1zd_fL7RIfCp8YE9zz8tMIbUuOiBROd8P
   unzip -j permuted_samples_test.zip
-  
+fi
+if ! [[ -f "$TGT_TEST" ]]; then  
   if [ $LEXICON -eq 1 ];
   then
     cd $GRAMMARS_PATH/$TEST_DIR
