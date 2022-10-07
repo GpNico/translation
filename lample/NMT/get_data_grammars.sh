@@ -18,7 +18,24 @@ N_THREADS=48     # number of threads in data preprocessing
 N_EPOCHS=100      # number of fastText epochs
 SRC_NAME=000000
 TGT_NAME=000000
+LEXICON=1
 
+if [ $LEXICON -eq 0 ];
+then
+  TARGET_DIR=target
+  TEST_DIR=test
+  VALID_DIR=valid
+else
+  TARGET_DIR=target_lexicon$LEXICON
+  TEST_DIR=test_lexicon$LEXICON
+  VALID_DIR=valid_lexicon$LEXICON
+fi
+# For now only one lexicon
+if [ $LEXICON -ge 2 ];
+then
+  echo "Error: lexcion $LEXICON does not exist!"
+  exit
+fi
 
 
 #
@@ -36,9 +53,11 @@ mkdir -p $TOOLS_PATH
 mkdir -p $DATA_PATH
 mkdir -p $GRAMMARS_PATH
 mkdir -p $GRAMMARS_PATH/source
-mkdir -p $GRAMMARS_PATH/target
+mkdir -p $GRAMMARS_PATH/$TARGET_DIR
 mkdir -p $GRAMMARS_PATH/valid
+mkdir -p $GRAMMARS_PATH/$VALID_DIR
 mkdir -p $GRAMMARS_PATH/test
+mkdir -p $GRAMMARS_PATH/$TEST_DIR
 
 # moses
 MOSES=$TOOLS_PATH/mosesdecoder
@@ -57,26 +76,26 @@ FASTTEXT=$FASTTEXT_DIR/fasttext
 
 # files full paths
 SRC_RAW=$GRAMMARS_PATH/source/sample_$SRC_NAME.txt
-TGT_RAW=$GRAMMARS_PATH/target/sample_$TGT_NAME.txt
-SRC_TOK=$GRAMMARS_PATH/sample_s$SRC_NAME.tok
-TGT_TOK=$GRAMMARS_PATH/sample_t$TGT_NAME.tok
-BPE_CODES=$GRAMMARS_PATH/bpe_codes
+TGT_RAW=$GRAMMARS_PATH/$TARGET_DIR/sample_$TGT_NAME.txt
+SRC_TOK=$GRAMMARS_PATH/sample_s$SRC_NAME.lex0.tok # Always lexicon 0 as source
+TGT_TOK=$GRAMMARS_PATH/sample_t$TGT_NAME.lex$LEXICON.tok
+BPE_CODES=$GRAMMARS_PATH/bpe_codes_s$SRC_NAME-t$TGT_NAME.lex0-lex$LEXICON
 
-CONCAT_BPE=$GRAMMARS_PATH/all.s$SRC_NAME-t$TGT_NAME.$CODES
+CONCAT_BPE=$GRAMMARS_PATH/all.s$SRC_NAME-t$TGT_NAME.lex0-lex$LEXICON.$CODES
 
-SRC_VOCAB=$GRAMMARS_PATH/vocab.s$SRC_NAME.$CODES
-TGT_VOCAB=$GRAMMARS_PATH/vocab.t$TGT_NAME.$CODES
-FULL_VOCAB=$GRAMMARS_PATH/vocab.s$SRC_NAME-t$TGT_NAME.$CODES
+SRC_VOCAB=$GRAMMARS_PATH/vocab.s$SRC_NAME.lex0.$CODES
+TGT_VOCAB=$GRAMMARS_PATH/vocab.t$TGT_NAME.lex$LEXICON.$CODES
+FULL_VOCAB=$GRAMMARS_PATH/vocab.s$SRC_NAME-t$TGT_NAME.lex0-lex$LEXICON.$CODES
 
 SRC_VALID=$GRAMMARS_PATH/valid/sample_$SRC_NAME.txt
-TGT_VALID=$GRAMMARS_PATH/valid/sample_$TGT_NAME.txt
+TGT_VALID=$GRAMMARS_PATH/$VALID_DIR/sample_$TGT_NAME.txt
 SRC_TEST=$GRAMMARS_PATH/test/sample_$SRC_NAME.txt
-TGT_TEST=$GRAMMARS_PATH/test/sample_$TGT_NAME.txt
+TGT_TEST=$GRAMMARS_PATH/$TEST_DIR/sample_$TGT_NAME.txt
 
 SRC_VALID_TOK=$GRAMMARS_PATH/valid/sample_s$SRC_NAME.tok
-TGT_VALID_TOK=$GRAMMARS_PATH/valid/sample_t$TGT_NAME.tok
+TGT_VALID_TOK=$GRAMMARS_PATH/$VALID_DIR/sample_t$TGT_NAME.tok
 SRC_TEST_TOK=$GRAMMARS_PATH/test/sample_s$SRC_NAME.tok
-TGT_TEST_TOK=$GRAMMARS_PATH/test/sample_t$TGT_NAME.tok
+TGT_TEST_TOK=$GRAMMARS_PATH/$TEST_DIR/sample_t$TGT_NAME.tok
 
 #
 # Download and install tools
@@ -140,10 +159,19 @@ if ! [[ -f "$SRC_RAW" && -f "$TGT_RAW" ]]; then
   gdown https://drive.google.com/uc?id=1tNzIr3JHe0JRXFa87qGnG46V-QrF7dJQ
   unzip -j permuted_samples_source.zip
   
-  cd $GRAMMARS_PATH/target
+  cd $GRAMMARS_PATH/$TARGET_DIR
   
-  gdown https://drive.google.com/uc?id=1ak6eXWB054Y3Zg3wQc0n2zjEFdLW4-cm
-  unzip -j permuted_samples_target.zip
+  if [ $LEXICON -eq 0 ];
+  then
+    gdown https://drive.google.com/uc?id=1ak6eXWB054Y3Zg3wQc0n2zjEFdLW4-cm
+    unzip -j permuted_samples_target.zip
+  fi
+  if [ $LEXICON -eq 1 ];
+  then
+    gdown https://drive.google.com/uc?id=16piuveQXb0dACvGMA8PD_aH7X5JSKOyz
+    unzip -j permuted_samples_target_lexicon_1.zip
+  fi
+  
 fi
 
 
@@ -215,6 +243,13 @@ if ! [[ -f "$SRC_VALID" && -f "$TGT_VALID" ]]; then
   cd $GRAMMARS_PATH/valid
   gdown https://drive.google.com/uc?id=10_j0MK8jiOe8C0JvAuPz-Dw5Zm_Lqkn3
   unzip -j permuted_samples_valid.zip
+  
+  if [ $LEXICON -eq 1 ];
+  then
+    cd $GRAMMARS_PATH/$VALID_DIR
+    gdown https://drive.google.com/uc?id=17bcTIJA8lNyZDhdBKhAef2FCwstgCB12
+    unzip -j permuted_samples_valid_lexicon_1.zip
+  fi
 fi
 
 if ! [[ -f "$SRC_TEST" && -f "$TGT_TEST" ]]; then
@@ -223,6 +258,13 @@ if ! [[ -f "$SRC_TEST" && -f "$TGT_TEST" ]]; then
   cd $GRAMMARS_PATH/test
   gdown https://drive.google.com/uc?id=1zd_fL7RIfCp8YE9zz8tMIbUuOiBROd8P
   unzip -j permuted_samples_test.zip
+  
+  if [ $LEXICON -eq 1 ];
+  then
+    cd $GRAMMARS_PATH/$TEST_DIR
+    gdown https://drive.google.com/uc?id=1g0viMLTUz5XNkuQHd-l1NvmiLjgVLvGq
+    unzip -j permuted_samples_test_lexicon_1.zip
+  fi
 fi
 
 cd $GRAMMARS_PATH
