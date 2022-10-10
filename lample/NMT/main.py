@@ -254,8 +254,8 @@ def main(params):
     	
     # Compute baseline BLEU
     src_lang, tgt_lang = params.langs.split(',')
-    hyp_path = os.path.join(os.getcwd(), 'data/artificial_grammars/test/sample_{}.txt'.format(src_lang[1:]))
-    ref_path = os.path.join(os.getcwd(), 'data/artificial_grammars/test/sample_{}.txt'.format(tgt_lang[1:]))
+    hyp_path = os.path.join(os.getcwd(), 'data/artificial_grammars/test/sample_{}.txt'.format(src_lang[1:7]))
+    ref_path = os.path.join(os.getcwd(), 'data/artificial_grammars/test/sample_{}.txt'.format(tgt_lang[1:7]))
     bleu = eval_moses_bleu(ref_path, hyp_path)
     print("BASELINE BLEU %s %s : %f" % (hyp_path, ref_path, bleu))
     		
