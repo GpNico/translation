@@ -84,6 +84,7 @@ TGT_TEST_TOK=$GRAMMARS_PATH/test/sample_t$TGT_NAME.LEX$LEXICON.tok
 
 if [ $LEXICON -eq 0 ];
 then
+  mkdir -p $GRAMMARS_PATH/target
   TGT_RAW=$GRAMMARS_PATH/target/sample_$TGT_NAME.txt
   
   TGT_VALID=$GRAMMARS_PATH/valid/sample_$TGT_NAME.txt
@@ -168,15 +169,16 @@ if ! [[ -f "$SRC_RAW" ]]; then
 fi
  
 if ! [[ -f "$TGT_RAW" ]]; then
-  cd $GRAMMARS_PATH/$TARGET_DIR
   
   if [ $LEXICON -eq 0 ];
   then
+    cd $GRAMMARS_PATH/target
     gdown https://drive.google.com/uc?id=1ak6eXWB054Y3Zg3wQc0n2zjEFdLW4-cm
     unzip -j permuted_samples_target.zip
   fi
   if [ $LEXICON -eq 1 ];
   then
+    cd $GRAMMARS_PATH/$TARGET_DIR
     gdown https://drive.google.com/uc?id=16piuveQXb0dACvGMA8PD_aH7X5JSKOyz
     unzip -j permuted_samples_target_lexicon_1.zip
   fi
