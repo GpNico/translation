@@ -18,7 +18,7 @@ N_THREADS=48     # number of threads in data preprocessing
 N_EPOCHS=100      # number of fastText epochs
 SRC_NAME=000000
 TGT_NAME=000000
-LEXICON=1
+LEXICON=0
 
 # For now only one lexicon
 if [ $LEXICON -ge 2 ];
@@ -85,6 +85,7 @@ TGT_TEST_TOK=$GRAMMARS_PATH/test/sample_t$TGT_NAME.LEX$LEXICON.tok
 if [ $LEXICON -eq 0 ];
 then
   mkdir -p $GRAMMARS_PATH/target
+  
   TGT_RAW=$GRAMMARS_PATH/target/sample_$TGT_NAME.txt
   
   TGT_VALID=$GRAMMARS_PATH/valid/sample_$TGT_NAME.txt
