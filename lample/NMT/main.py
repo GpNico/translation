@@ -260,10 +260,10 @@ def main(params):
     print("BASELINE BLEU %s %s : %f" % (hyp_path, ref_path, bleu))
     		
     # Check CUDA and all
-    print('\nIs CUDA available: {}'.format(torch.cuda.is_available()))
-    print('CUDA version: {}'.format(torch.version.cuda))
-    print('Number of devices: {}'.format(torch.cuda.device_count()))
-    print('Device name: {}\n'.format(torch.cuda.get_device_name("cuda:0")))
+    #print('\nIs CUDA available: {}'.format(torch.cuda.is_available()))
+    #print('CUDA version: {}'.format(torch.version.cuda))
+    #print('Number of devices: {}'.format(torch.cuda.device_count()))
+    #print('Device name: {}\n'.format(torch.cuda.get_device_name("cuda:0")))
 
     # check parameters
     assert params.exp_name
@@ -274,6 +274,8 @@ def main(params):
     logger = initialize_exp(params)
     data = load_data(params)
     encoder, decoder, discriminator, lm = build_mt_model(params, data)
+    
+    print("We can reach trainer")
 
     # initialize trainer / reload checkpoint / initialize evaluator
     trainer = TrainerMT(encoder, decoder, discriminator, lm, data, params)

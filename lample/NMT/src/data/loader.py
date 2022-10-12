@@ -134,6 +134,11 @@ def check_dictionaries(params, data):
     for i in range(1, params.n_langs):
         dico_i = data['dico'][params.langs[i]]
         assert all(dico_0.index(x) == dico_i.index(x) for x in _SPECIAL_WORDS)
+    
+    print('n_langs ', params.n_langs)    
+    print('lang 0 ', params.langs[0])
+    print('lang 1 ', params.langs[1])
+    print('data 0 ', data['dico'][params.langs[0]])
 
     assert (not getattr(params, 'share_lang_emb', False) or
             all(data['dico'][params.langs[0]] == data['dico'][params.langs[i]]
