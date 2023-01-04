@@ -307,6 +307,48 @@ def load_mono_data(params, data):
         data['mono'][lang] = {k: v for k, v in datasets}
 
     logger.info('')
+    
+def load_customized_data(params, data):
+    """
+    Load customized data.
+    """
+    if len(params.customized_data) == 0:
+        return
+    print("Before for: ", params.customized_data)
+        
+    for lang, path in params.customized_data.items():
+    
+      print("lang %s "%lang)
+      print("path %s "%path)
+      if path == '':
+        continue
+      assert os.path.isfile(path)
+  
+      logger.info('============ Customized data (%s)' % path)
+  
+      datasets = []
+  
+      # load data
+      print("Loading %s ..." % path)
+      customized_data = load_binarized(path, params)
+      set_parameters(params, customized_data['dico'])
+      print(customized_data)
+  
+      # set / check dictionary /!\ FOR NOW WE START FROM SRC SO NO NEED TO SPECIFY THE LANG
+      #if lang not in data['dico']:
+      #    data['dico'][lang] = customized_data['dico']
+      #else:
+      #    assert data['dico'][lang] == customized_data['dico']
+  
+      # customized data
+      customized_data = MonolingualDataset(customized_data['sentences'], customized_data['positions'],
+                                     data['dico'][lang], params.lang2id[lang], params)
+  
+      datasets.append(('customized', customized_data))
+  
+      data['customized'][lang] = {k: v for k, v in datasets}
+  
+      logger.info('')
 
 
 def check_all_data_params(params):
@@ -345,13 +387,19 @@ def check_all_data_params(params):
     assert not (params.n_para == 0) ^ (all(v[0] == '' for v in params.para_dataset.values()))
     for (lang1, lang2), (train_path, valid_path, test_path) in params.para_dataset.items():
         assert lang1 < lang2 and lang1 in params.langs and lang2 in params.langs
+        print("############ DEBUG ############")
+        print(train_path.replace('XX', lang1))
         assert train_path == '' or os.path.isfile(train_path.replace('XX', lang1))
         assert train_path == '' or os.path.isfile(train_path.replace('XX', lang2))
         assert os.path.isfile(valid_path.replace('XX', lang1))
         assert os.path.isfile(valid_path.replace('XX', lang2))
         assert os.path.isfile(test_path.replace('XX', lang1))
         assert os.path.isfile(test_path.replace('XX', lang2))
-
+    
+    # check customized data
+    params.customized_data = {k: v for k, v in [x.split(':') for x in params.customized_data.split(';') if len(x) > 0]}
+    print("customized_dataset ", params.customized_data)
+    
     # check back-parallel datasets
     params.back_dataset = {k: v for k, v in [x.split(':') for x in params.back_dataset.split(';') if len(x) > 0]}
     assert type(params.back_dataset) is dict
@@ -369,6 +417,7 @@ def check_all_data_params(params):
 
     # check parallel directions
     params.para_directions = [x.split('-') for x in params.para_directions.split(',') if len(x) > 0]
+    print("para directions ", params.para_directions)
     if len(params.para_directions) > 0:
         assert params.n_para != 0
         assert type(params.para_directions) is list
@@ -496,8 +545,9 @@ def load_data(params, mono_only=False):
         - mono (dictionary of monolingual datasets (train, valid, test))
         - para (dictionary of parallel datasets (train, valid, test))
         - back (dictionary of parallel datasets (train only))
+        - customize (corresponding to a customized file one wish to trnaslate)
     """
-    data = {'dico': {}, 'mono': {}, 'para': {}, 'back': {}}
+    data = {'dico': {}, 'mono': {}, 'para': {}, 'back': {}, 'customized': {}}
 
     if not mono_only:
 
@@ -509,6 +559,10 @@ def load_data(params, mono_only=False):
 
     # monolingual datasets
     load_mono_data(params, data)
+    
+    # customized datasets
+    print("Loading Customized Data...")
+    load_customized_data(params, data)
 
     # update parameters
     check_dictionaries(params, data)

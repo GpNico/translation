@@ -67,16 +67,27 @@ class EvaluatorMT(object):
         """
         Create a new iterator for a dataset.
         """
-        assert data_type in ['valid', 'test']
+        assert data_type in ['valid', 'test', 'customized']
         if lang2 is None or lang1 == lang2:
             for batch in self.mono_iterator(data_type, lang1):
                 yield batch if lang2 is None else (batch, batch)
         else:
             k = (lang1, lang2) if lang1 < lang2 else (lang2, lang1)
-            dataset = self.data['para'][k][data_type]
-            dataset.batch_size = 32
-            for batch in dataset.get_iterator(shuffle=False, group_by_size=True)():
-                yield batch if lang1 < lang2 else batch[::-1]
+            if data_type in ['valid', 'test']:
+              dataset = self.data['para'][k][data_type]
+              dataset.batch_size = 32
+              for batch in dataset.get_iterator(shuffle=False, group_by_size=True)():
+                  yield batch if lang1 < lang2 else batch[::-1]
+            else:
+              #print("##### data #####")
+              print(self.data)
+              dataset = self.data['customized'][lang1]['customized']
+              #print("##### dataset type: {} #####".format(type(dataset)))
+              dataset.batch_size = 32
+              for batch in dataset.get_iterator(shuffle=False, group_by_size=True)():
+                  #print("BATCHHHH ", batch)
+                  #print("batch shape: tokens {}; lentghs {} : ".format(batch[0].shape, batch[1].shape))
+                  yield batch if lang1 < lang2 else batch[::-1]
 
     def create_reference_files(self):
         """
@@ -178,6 +189,77 @@ class EvaluatorMT(object):
         # update scores
         scores['ppl_%s_%s_%s' % (lang1, lang2, data_type)] = np.exp(xe_loss / count)
         scores['bleu_%s_%s_%s' % (lang1, lang2, data_type)] = bleu
+        
+        
+    def eval_customized(self, lang1, lang2, data_type, scores):
+        """
+        Evaluate lang1 -> lang2 perplexity and BLEU scores.
+        """
+        logger.info("Evaluating %s -> %s (%s) ..." % (lang1, lang2, data_type)) # ex: (fr, en, valid)
+        self.encoder.eval()
+        self.decoder.eval()
+        params = self.params
+        lang1_id = params.lang2id[lang1]
+        lang2_id = params.lang2id[lang2]
+        
+        #check if ref file exists
+        ref_file_name = 'ref.{0}-{1}.{2}.txt'.format(lang1, lang2, data_type)
+        ref_file_name = os.path.join(params.dump_path, ref_file_name)
+        is_ref = os.path.isfile(ref_file_name)
+
+        # hypothesis
+        txt = []
+        if not(is_ref):
+          ref_txt = []
+        
+        # for perplexity
+        #loss_fn2 = nn.CrossEntropyLoss(weight=self.decoder.loss_fn[lang2_id].weight, size_average=False)
+        #n_words2 = self.params.n_words[lang2_id]
+        #count = 0
+        #xe_loss = 0
+
+        for batch in self.get_iterator(data_type, lang1, lang2):
+
+            # batch
+            (sent1, len1) = batch
+            sent1 = sent1.cuda()
+            
+            if not(is_ref):
+              ref_txt.extend(convert_to_text(sent1, len1, self.dico[lang1], lang1_id, params))
+            
+            # encode / decode / generate
+            encoded = self.encoder(sent1, len1, lang1_id)
+            sent2_, len2_, _ = self.decoder.generate(encoded, lang2_id)
+
+            # cross-entropy loss
+            #xe_loss += loss_fn2(decoded.view(-1, n_words2), sent2[1:].view(-1)).item()
+            #count += (len2 - 1).sum().item()  # skip BOS word
+
+            # convert to text
+            txt.extend(convert_to_text(sent2_, len2_, self.dico[lang2], lang2_id, self.params))
+
+        # hypothesis / reference paths
+        hyp_name = 'custom{0}.{1}-{2}.{3}.txt'.format(scores['epoch'], lang1, lang2, data_type)
+        hyp_path = os.path.join(params.dump_path, hyp_name) # ex: dumped/GR_s000000_t010000/mt9dufwzms/hyp40.s000000-t010000.valid
+
+        # export sentences to hypothesis file / restore BPE segmentation
+        with open(hyp_path, 'w', encoding='utf-8') as f:
+            f.write('\n'.join(txt) + '\n')
+        restore_segmentation(hyp_path)
+
+        if not(is_ref):
+          logger.info("Writting customized ref file at %s  ..." % (ref_file_name))
+          with open(ref_file_name, 'w', encoding='utf-8') as f:
+            f.write('\n'.join(ref_txt) + '\n')
+          restore_segmentation(ref_file_name)
+          
+        # evaluate BLEU score
+        #bleu = eval_moses_bleu(ref_path, hyp_path)
+        #logger.info("BLEU %s %s : %f" % (hyp_path, ref_path, bleu))
+
+        # update scores
+        #scores['ppl_%s_%s_%s' % (lang1, lang2, data_type)] = np.exp(xe_loss / count)
+        #scores['bleu_%s_%s_%s' % (lang1, lang2, data_type)] = bleu
 
     def eval_back(self, lang1, lang2, lang3, data_type, scores):
         """
@@ -256,9 +338,11 @@ class EvaluatorMT(object):
         with torch.no_grad():
 
             for lang1, lang2 in self.data['para'].keys():
+                self.eval_customized(lang1, lang2, 'customized', scores)
                 for data_type in ['valid', 'test']:
                     self.eval_para(lang1, lang2, data_type, scores)
                     self.eval_para(lang2, lang1, data_type, scores)
+                
 
             for lang1, lang2, lang3 in self.params.pivo_directions:
                 for data_type in ['valid', 'test']:

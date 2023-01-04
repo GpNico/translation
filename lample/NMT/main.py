@@ -237,8 +237,10 @@ def get_parser():
                         help="Length penalty: <1.0 favors shorter, >1.0 favors longer sentences")
     # custom
     parser.add_argument("--wandb",
-    			 help="Store training data on wandb.",
-    			 action="store_true")
+    			              help="Store training data on wandb.",
+   			                action="store_true")
+    parser.add_argument("--customized_data",
+                        help="File we want the model to translate.", type=str, default="")
     
     return parser
 
@@ -254,10 +256,10 @@ def main(params):
     	
     # Compute baseline BLEU
     src_lang, tgt_lang = params.langs.split(',')
-    hyp_path = os.path.join(os.getcwd(), 'data/artificial_grammars/test/sample_{}.txt'.format(src_lang[1:7]))
-    ref_path = os.path.join(os.getcwd(), 'data/artificial_grammars/test/sample_{}.txt'.format(tgt_lang[1:7]))
-    bleu = eval_moses_bleu(ref_path, hyp_path)
-    print("BASELINE BLEU %s %s : %f" % (hyp_path, ref_path, bleu))
+    #hyp_path = os.path.join(os.getcwd(), 'data/artificial_grammars/test/sample_{}.txt'.format(src_lang[1:7]))
+    #ref_path = os.path.join(os.getcwd(), 'data/artificial_grammars/test/sample_{}.txt'.format(tgt_lang[1:7]))
+    #bleu = eval_moses_bleu(ref_path, hyp_path)
+    #print("BASELINE BLEU %s %s : %f" % (hyp_path, ref_path, bleu))
     		
     # Check CUDA and all
     #print('\nIs CUDA available: {}'.format(torch.cuda.is_available()))
@@ -273,6 +275,11 @@ def main(params):
     # initialize experiment / load data / build model
     logger = initialize_exp(params)
     data = load_data(params)
+    print("################")
+    print("data ", data)
+    #print("mono ", len(data['mono']['s000000.LEX0']['train']) )
+    #print("para ", len(data['para'][('s000000.LEX0', 't000000.LEX1')]['train']))
+    #exit(0)
     encoder, decoder, discriminator, lm = build_mt_model(params, data)
     
     print("We can reach trainer")
