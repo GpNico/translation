@@ -6,10 +6,10 @@ set -e
 
 # Parameters
 CODES=1000      # number of BPE codes
-SRC_NAME=011111
-TGT_NAME=011111
+SRC_NAME=000000
+TGT_NAME=000000
 LEXICON_SRC=0
-LEXICON_TGT=1
+LEXICON_TGT=0
 FREQ_SRC=0
 FREQ_TGT=0
 
@@ -84,7 +84,6 @@ FASTTEXT=$FASTTEXT_DIR/fasttext
 CUSTOMIZED_RAW=$GRAMMARS_PATH/customized/lexicon_0_words_only.txt
 CUSTOMIZED_TOK=$GRAMMARS_PATH/customized/lexicon_0_words_only.tok
 
-echo "test"
 if [ $BILINGUAL_DICT_SUP = True ];
 then
   if [ $PARTIAL_DICT = True ];
@@ -105,17 +104,18 @@ fi
 
 # tokenize data
 echo "Tokenizing customized data..."
-cat $CUSTOMIZED_RAW | $NORM_PUNC -l en | $TOKENIZER -l en -no-escape -threads $N_THREADS > $CUSTOMIZED_TOK
-
+echo "Test 1"
+#cat $CUSTOMIZED_RAW | $NORM_PUNC -l en | $TOKENIZER -l en -no-escape -threads $N_THREADS > $CUSTOMIZED_TOK
+echo "Test 2"
   
 # apply fastbpe
 echo "Applying FastBPE..."
-$FASTBPE applybpe $CUSTOMIZED_TOK.$CODES $CUSTOMIZED_TOK $BPE_CODES $SRC_VOCAB
+#$FASTBPE applybpe $CUSTOMIZED_TOK.$CODES $CUSTOMIZED_TOK $BPE_CODES $SRC_VOCAB
   
 # Binarizing data...
 echo "Binarizing customized data..."
-rm -f $CUSTOMIZED_TOK.$CODES.pth
-$UMT_PATH/preprocess.py $FULL_VOCAB $CUSTOMIZED_TOK.$CODES
+#rm -f $CUSTOMIZED_TOK.$CODES.pth
+#$UMT_PATH/preprocess.py $FULL_VOCAB $CUSTOMIZED_TOK.$CODES
 
 ##########################
 
@@ -163,7 +163,8 @@ elif [ $SUPERVISED -eq 0 ];
 then
 
   echo 'Unsupervised Training!' 
-  python main.py --exp_name $EXP_NAME --batch_size 16 --wandb --max_epoch 40 --transformer $TRANSFORMER --n_enc_layers 4 --n_dec_layers 4 --share_enc 3 --share_dec 3 --share_lang_emb True --share_output_emb True --langs $GR1','$GR2 --n_mono -1 --mono_dataset $GR1':'$GRAMMARS_PATH'/'$DATA_FOLDER'/sample_'$GR1'.tok.'$CODES'.pth,,;'$GR2':'$GRAMMARS_PATH'/'$DATA_FOLDER'/sample_'$GR2'.tok.'$CODES'.pth,,' --para_dataset $GR1'-'$GR2':,'$GRAMMARS_PATH'/'$DATA_FOLDER'/valid/sample_XX.tok.'$CODES'.pth,'$GRAMMARS_PATH'/'$DATA_FOLDER'/test/sample_XX.tok.'$CODES'.pth' --mono_directions $GR1','$GR2 --word_shuffle 3 --word_dropout 0.1 --word_blank 0.2 --pivo_directions $GR2'-'$GR1'-'$GR2','$GR1'-'$GR2'-'$GR1 --pretrained_emb $GRAMMARS_PATH'/'$DATA_FOLDER'/all.'$GR1'-'$GR2'.'$CODES'.vec' --pretrained_out True --lambda_xe_mono '0:1,100000:0.1,300000:0' --lambda_xe_otfd 1 --otf_num_processes 30 --otf_sync_params_every 1000 --enc_optimizer adam,lr=0.0001 --epoch_size 100000 --stopping_criterion 'bleu_'$GR1'_'$GR2'_valid,20' --customized_data $GR1':'$CUSTOMIZED_TOK.$CODES.pth';'$GR2':'
+  
+  python main.py --exp_name $EXP_NAME --batch_size 16 --wandb --max_epoch 40 --transformer $TRANSFORMER --n_enc_layers 4 --n_dec_layers 4 --share_enc 3 --share_dec 3 --share_lang_emb True --share_output_emb True --langs $GR1','$GR2 --n_mono -1 --mono_dataset $GR1':'$GRAMMARS_PATH'/'$DATA_FOLDER'/sample_'$GR1'.tok.'$CODES'.pth,,;'$GR2':'$GRAMMARS_PATH'/'$DATA_FOLDER'/sample_'$GR2'.tok.'$CODES'.pth,,' --para_dataset $GR1'-'$GR2':,'$GRAMMARS_PATH'/'$DATA_FOLDER'/valid/sample_XX.tok.'$CODES'.pth,'$GRAMMARS_PATH'/'$DATA_FOLDER'/test/sample_XX.tok.'$CODES'.pth' --mono_directions $GR1','$GR2 --word_shuffle 3 --word_dropout 0.1 --word_blank 0.2 --pivo_directions $GR2'-'$GR1'-'$GR2','$GR1'-'$GR2'-'$GR1 --pretrained_emb $GRAMMARS_PATH'/'$DATA_FOLDER'/all.'$GR1'-'$GR2'.'$CODES'.vec' --pretrained_out True --lambda_xe_mono '0:1,100000:0.1,300000:0' --lambda_xe_otfd 1 --otf_num_processes 30 --otf_sync_params_every 1000 --enc_optimizer adam,lr=0.0001 --epoch_size 100000 --stopping_criterion 'bleu_'$GR1'_'$GR2'_valid,20' #--customized_data $GR1':'$CUSTOMIZED_TOK.$CODES.pth';'$GR2':'
   
 else
   echo 'Training with a proportion of '$SUPERVISED' supervised examples !'

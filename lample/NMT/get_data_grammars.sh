@@ -16,13 +16,14 @@ N_MONO=100000  # number of monolingual sentences for each language
 CODES=1000      # number of BPE codes
 N_THREADS=48     # number of threads in data preprocessing
 N_EPOCHS=30      # number of fastText epochs
-SRC_NAME=011111
-TGT_NAME=011111
+SRC_NAME=000000
+TGT_NAME=000000
 LEXICON_SRC=0
-LEXICON_TGT=1
+LEXICON_TGT=0
 FREQ_SRC=0 # If 0 then uniform freq, else it correspond to the k*10 of the power law (so k = FREQ/10) # Because FREQ cannot be a float :(
 FREQ_TGT=0 
 PARA=False # the target is now parallel to the source
+FIELD=False # download lexical field data /!\ Freq is k=1.1, no need to specify FREQ_XXX /!\
 
 # Name of the experiment
 SRC_STRING='s'$SRC_NAME'.LEX'$LEXICON_SRC
@@ -41,11 +42,18 @@ fi
 
 EXP_NAME='GR_'$SRC_STRING'.'$TGT_STRING
 
+if [ $FIELD = True ];
+then
+  echo "Download lexical field data..."
+  EXP_NAME=$EXP_NAME'_FIELD'
+fi
+
 if [ $PARA = True ];
 then
   echo "Parallel data..."
   EXP_NAME=$EXP_NAME'_SUP'
 fi
+
 
 
 #
@@ -116,41 +124,6 @@ TGT_RAW=$GRAMMARS_PATH/$EXP_NAME/target/sample_$TGT_NAME.txt
 TGT_VALID=$GRAMMARS_PATH/$EXP_NAME/valid/valid_tgt/sample_$TGT_NAME.txt
 TGT_TEST=$GRAMMARS_PATH/$EXP_NAME/test/test_tgt/sample_$TGT_NAME.txt
 
-###
-
-#if [ $LEXICON_TGT -eq 0 ];
-#then
-#  if [ $PARA = True ];
-#  then
-#    TGT_RAW=$GRAMMARS_PATH/$EXP_NAME/source/sample_$TGT_NAME.txt
-#  else
-#    TGT_RAW=$GRAMMARS_PATH/$EXP_NAME/target/sample_$TGT_NAME.txt
-#  fi
-#  mkdir -p $GRAMMARS_PATH/$EXP_NAME/target
-  
-#  TGT_VALID=$GRAMMARS_PATH/$EXP_NAME/valid/sample_$TGT_NAME.txt
-#  TGT_TEST=$GRAMMARS_PATH/$EXP_NAME/test/sample_$TGT_NAME.txt
-#else
-#  if [ $PARA = True ];
-#  then
-#    TARGET_DIR=source_lexicon$LEXICON_TGT
-#  else
-#    TARGET_DIR=target_lexicon$LEXICON_TGT
-#  fi
-#  TEST_DIR=test_lexicon$LEXICON_TGT
-#  VALID_DIR=valid_lexicon$LEXICON_TGT
-  
-#  mkdir -p $GRAMMARS_PATH/$TARGET_DIR
-#  mkdir -p $GRAMMARS_PATH/$TEST_DIR
-#  mkdir -p $GRAMMARS_PATH/$VALID_DIR
-  
-#  TGT_RAW=$GRAMMARS_PATH/$TARGET_DIR/sample_$TGT_NAME.txt
-  
-#  TGT_VALID=$GRAMMARS_PATH/$VALID_DIR/sample_$TGT_NAME.txt
-#  TGT_TEST=$GRAMMARS_PATH/$TEST_DIR/sample_$TGT_NAME.txt
-  
-#fi
-
 #
 # Download and install tools
 #
@@ -210,7 +183,11 @@ if ! [[ -f "$SRC_RAW" ]]; then
 
   cd $GRAMMARS_PATH/$EXP_NAME/source
   
-  if [ $FREQ_SRC -eq 11 ];
+  if [ $FIELD = True ];
+  then
+    gdown https://drive.google.com/uc?id=1SnUriwTshjqkXAbBr-XJtqBOksZO7BXA
+    unzip -j freqk11_permuted_samples_source_fields.zip
+  elif [ $FREQ_SRC -eq 11 ];
   then
     gdown https://drive.google.com/uc?id=13CqOmZZ7PtcXfb11Me91Yye2KeEVBwkC
     unzip -j freqk11_permuted_samples_source.zip
@@ -232,7 +209,11 @@ if ! [[ -f "$TGT_RAW" ]]; then
   then
     if [ $PARA = True ];
     then
-      if [ $FREQ_TGT -eq 11 ];
+      if [ $FIELD = True ];
+      then
+        gdown https://drive.google.com/uc?id=1SnUriwTshjqkXAbBr-XJtqBOksZO7BXA
+        unzip -j freqk11_permuted_samples_source_fields.zip
+      elif [ $FREQ_TGT -eq 11 ];
       then
         gdown https://drive.google.com/uc?id=13CqOmZZ7PtcXfb11Me91Yye2KeEVBwkC
         unzip -j freqk11_permuted_samples_source.zip
@@ -245,7 +226,11 @@ if ! [[ -f "$TGT_RAW" ]]; then
         unzip -j permuted_samples_source.zip
       fi
     else
-      if [ $FREQ_TGT -eq 11 ];
+      if [ $FIELD = True ];
+      then
+        gdown https://drive.google.com/uc?id=1KoAqglDnQOmu8oToJyvWhT6cEnVCqkfA
+        unzip -j freqk11_permuted_samples_target_fields.zip
+      elif [ $FREQ_TGT -eq 11 ];
       then
         gdown https://drive.google.com/uc?id=1NwWyP3_stFjdpN2-yNRQ1YAjCOu9xtX-
         unzip -j freqk11_permuted_samples_target.zip
@@ -265,7 +250,11 @@ if ! [[ -f "$TGT_RAW" ]]; then
     
     if [ $PARA = True ];
     then
-      if [ $FREQ_TGT -eq 11 ];
+      if [ $FIELD = True ];
+      then
+        gdown https://drive.google.com/uc?id=1mdSNy_B1SwWAPxAZmnnhJgMtga8Oi1iK
+        unzip -j freqk11_permuted_samples_source_fields_lexicon_1.zip
+      elif [ $FREQ_TGT -eq 11 ];
       then
         gdown https://drive.google.com/uc?id=17UZ5daDavOKHAiEQx_6KDQYSqE2n7BJ4
         unzip -j freqk11_permuted_samples_source_lexicon_1.zip
@@ -278,7 +267,11 @@ if ! [[ -f "$TGT_RAW" ]]; then
         unzip -j permuted_samples_source_lexicon_1.zip
       fi
     else
-      if [ $FREQ_TGT -eq 11 ];
+      if [ $FIELD = True ];
+      then
+        gdown https://drive.google.com/uc?id=1X-2Wip7SMeyBxKGUfSiRoBjPZrwL3wpN
+        unzip -j freqk11_permuted_samples_target_fields_lexicon_1.zip
+      elif [ $FREQ_TGT -eq 11 ];
       then
         gdown https://drive.google.com/uc?id=1lByQHzaUwuKxSHU6Yz67DJpAbTF2MCtG
         unzip -j freqk11_permuted_samples_target_lexicon_1.zip
@@ -304,7 +297,6 @@ if ! [[ -f "$TGT_RAW" ]]; then
       unzip -j permuted_samples_target_lexicon_2.zip
     fi
   fi
-  
 fi
 
 
@@ -374,7 +366,11 @@ if ! [[ -f "$SRC_VALID" ]]; then
   echo "Downloading Valid data..."
   cd $GRAMMARS_PATH/$EXP_NAME/valid/valid_src
   
-  if [ $FREQ_TGT -eq 11 ];
+  if [ $FIELD = True ];
+  then
+    gdown https://drive.google.com/uc?id=18DzgZqvvIs5rYJeqpgbUfO_3B42T7oAb
+    unzip -j freqk11_permuted_samples_valid_fields.zip
+  elif [ $FREQ_TGT -eq 11 ];
   then
     gdown https://drive.google.com/uc?id=1gJNqMuVznjHjcObXiqwxk-7t-6RMgjwn
     unzip -j freqk11_permuted_samples_valid.zip
@@ -391,8 +387,12 @@ fi
 if ! [[ -f "$TGT_VALID" ]]; then
   cd $GRAMMARS_PATH/$EXP_NAME/valid/valid_tgt
   if [ $LEXICON_TGT -eq 0 ];
-  then 
-    if [ $FREQ_TGT -eq 11 ];
+  then
+    if [ $FIELD = True ];
+    then
+      gdown https://drive.google.com/uc?id=18DzgZqvvIs5rYJeqpgbUfO_3B42T7oAb
+      unzip -j freqk11_permuted_samples_valid_fields.zip
+    elif [ $FREQ_TGT -eq 11 ];
     then
       gdown https://drive.google.com/uc?id=1gJNqMuVznjHjcObXiqwxk-7t-6RMgjwn
       unzip -j freqk11_permuted_samples_valid.zip
@@ -406,7 +406,11 @@ if ! [[ -f "$TGT_VALID" ]]; then
     fi
   elif [ $LEXICON_TGT -eq 1 ];
   then
-    if [ $FREQ_TGT -eq 11 ];
+    if [ $FIELD = True ];
+    then
+      gdown https://drive.google.com/uc?id=1r-mT7oneUj9tEGHL6lrOe1DZU5JovUL7
+      unzip -j freqk11_permuted_samples_valid_fields_lexicon_1.zip
+    elif [ $FREQ_TGT -eq 11 ];
     then
       gdown https://drive.google.com/uc?id=1rtBYeyBN86tu1U3wak6KZMaoRJ0_Sgc-
       unzip -j freqk11_permuted_samples_valid_lexicon_1.zip
@@ -430,7 +434,11 @@ if ! [[ -f "$SRC_TEST" ]]; then
 
   cd $GRAMMARS_PATH/$EXP_NAME/test/test_src
   
-  if [ $FREQ_TGT -eq 11 ];
+  if [ $FIELD = True ];
+  then
+    gdown https://drive.google.com/uc?id=1WAUw1HM7Va_HT15OCDsrDFT6sk-IEd4Z
+    unzip -j freqk11_permuted_samples_test_fields.zip
+  elif [ $FREQ_TGT -eq 11 ];
   then
     gdown https://drive.google.com/uc?id=1eIoZJ5tb19H0prDcaVwx1nI936onRnoQ
     unzip -j freqk11_permuted_samples_test.zip
@@ -444,11 +452,20 @@ if ! [[ -f "$SRC_TEST" ]]; then
   fi
 fi
 
-if ! [[ -f "$TGT_TEST" ]]; then  
+echo "We reach line 456"
+
+if ! [[ -f "$TGT_TEST" ]]; then
+  echo "We are in TYGT_TEST"
   cd $GRAMMARS_PATH/$EXP_NAME/test/test_tgt
+  echo "We cd-ed"
   if [ $LEXICON_TGT -eq 0 ];
   then
-    if [ $FREQ_TGT -eq 11 ];
+    echo "We are in tgt_test lex0"
+    if [ $FIELD = True ];
+    then
+      gdown https://drive.google.com/uc?id=1WAUw1HM7Va_HT15OCDsrDFT6sk-IEd4Z
+      unzip -j freqk11_permuted_samples_test_fields.zip
+    elif [ $FREQ_TGT -eq 11 ];
     then
       gdown https://drive.google.com/uc?id=1eIoZJ5tb19H0prDcaVwx1nI936onRnoQ
       unzip -j freqk11_permuted_samples_test.zip
@@ -457,13 +474,17 @@ if ! [[ -f "$TGT_TEST" ]]; then
       gdown https://drive.google.com/uc?id=1msZmwX6jEXyMz7ukOI2QkcxQwOhefXNk
       unzip -j freqk2_permuted_samples_test.zip
     else
+      echo "We are in permuted_samples_test.zip"
       gdown https://drive.google.com/uc?id=1zd_fL7RIfCp8YE9zz8tMIbUuOiBROd8P
       unzip -j permuted_samples_test.zip
     fi
   elif [ $LEXICON_TGT -eq 1 ];
   then
-    
-    if [ $FREQ_TGT -eq 11 ];
+    if [ $FIELD = True ];
+    then
+      gdown https://drive.google.com/uc?id=1PYoT2nhSApJ7HXXxe1wlGEe2JFqdYY1C
+      unzip -j freqk11_permuted_samples_test_fields_lexicon_1.zip
+    elif [ $FREQ_TGT -eq 11 ];
     then
       gdown https://drive.google.com/uc?id=1LeJEqT0LK9WAVgVzusbkf9vIR1ZK2xAl
       unzip -j freqk11_permuted_samples_test_lexicon_1.zip
@@ -491,6 +512,8 @@ if ! [[ -f "$TGT_VALID" ]]; then echo "$TGT_VALID is not found!"; exit; fi
 if ! [[ -f "$SRC_TEST" ]]; then echo "$SRC_TEST is not found!"; exit; fi
 if ! [[ -f "$TGT_TEST" ]]; then echo "$TGT_TEST is not found!"; exit; fi
 
+echo "we reach line 510"
+
 # tokenize data
 if ! [[ -f "$SRC_VALID_TOK" && -f "$TGT_VALID_TOK" ]]; then
   echo "Tokenize Valid data..."
@@ -503,6 +526,8 @@ if ! [[ -f "$SRC_TEST_TOK" && -f "$TGT_TEST_TOK" ]]; then
   cat $SRC_TEST | $NORM_PUNC -l en | $REM_NON_PRINT_CHAR | $TOKENIZER -l en -no-escape -threads $N_THREADS > $SRC_TEST_TOK
   cat $TGT_TEST | $NORM_PUNC -l en | $REM_NON_PRINT_CHAR | $TOKENIZER -l en -no-escape -threads $N_THREADS > $TGT_TEST_TOK
 fi
+
+echo "we reach line 525"
 
 #echo "Tokenizing valid and test data..."
 #$INPUT_FROM_SGM < $SRC_VALID.sgm | $NORM_PUNC -l en | $REM_NON_PRINT_CHAR | $TOKENIZER -l en -no-escape -threads $N_THREADS > $SRC_VALID
