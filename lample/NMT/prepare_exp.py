@@ -585,7 +585,6 @@ if __name__ == '__main__':
     assert params['LEXICON_SRC'] == 0
     
     # Fix
-    params['N_MONO']=config.N_MONO  # number of monolingual sentences for each language
     params['CODES']=config.CODES      # number of BPE codes
     params['N_THREADS']=config.N_THREADS     # number of threads in data preprocessing
     params['N_EPOCHS']=config.N_EPOCHS      # number of fastText epochs
@@ -655,6 +654,7 @@ if __name__ == '__main__':
     
     # Get keys that correspond to this experiment
     if params['FROM_FOLDER'] == '':
+        print("No FROM_FOLDER")
         key_source, key_target, key_source_eval, key_target_eval = _get_keys(params)
         
         # Create associated paths
