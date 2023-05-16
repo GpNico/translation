@@ -338,7 +338,8 @@ class EvaluatorMT(object):
         with torch.no_grad():
 
             for lang1, lang2 in self.data['para'].keys():
-                self.eval_customized(lang1, lang2, 'customized', scores)
+                if len(self.data['customized']) > 0:
+                    self.eval_customized(lang1, lang2, 'customized', scores)
                 for data_type in ['valid', 'test']:
                     self.eval_para(lang1, lang2, data_type, scores)
                     self.eval_para(lang2, lang1, data_type, scores)

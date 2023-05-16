@@ -246,16 +246,24 @@ def get_parser():
 
 
 def main(params):
+    
     # wandb
     if params.wandb:
-    	wandb.init(
-    		project='Lample UMT',
-    		name=params.exp_name,
-    		config=params
-    		)
-    	
+        wandb.init(
+            project='Lample UMT V2',
+            name=params.exp_name,
+            config=params
+            )
+        
     # Compute baseline BLEU
     src_lang, tgt_lang = params.langs.split(',')
+    print(f"langs: {src_lang}, {tgt_lang}")
+    print(f"mono_directions ", params.mono_directions)
+    print(f"pivo_directions ", params.pivo_directions)
+    print(f"word_shuffle ", params.word_shuffle)
+    print(f"mono_dataset ", params.mono_dataset)
+    print(f"para_dataset ", params.para_dataset)
+
     #hyp_path = os.path.join(os.getcwd(), 'data/artificial_grammars/test/sample_{}.txt'.format(src_lang[1:7]))
     #ref_path = os.path.join(os.getcwd(), 'data/artificial_grammars/test/sample_{}.txt'.format(tgt_lang[1:7]))
     #bleu = eval_moses_bleu(ref_path, hyp_path)
