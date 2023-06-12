@@ -3,6 +3,7 @@
     experience in Python to be cleaner.
 """
 
+import glob
 import os
 
 import config
@@ -136,7 +137,17 @@ def _get_gdown_dict():
              '2-1-0-0': {'link': 'https://drive.google.com/uc?id=1JCxht0OR_ZVCU70nxQLYfDBLKNdRm6Ab',
                          'name': 'permuted_samples_target_lexicon_2.zip'},
              'testperanto': {'link': 'https://drive.google.com/uc?id=1n-tmFz4rOgXYHLPkwlf29qzO9jyHNNOI',
-                             'name': 'testperanto.zip'}
+                             'name': 'testperanto.zip'},
+             'mixture_000000': {'link': 'https://drive.google.com/uc?id=1xJ2cyz2o2sH8kDYtQwWCfxyXiQdAtXWW',
+                                'name': 'mixture_000000.zip'},
+             'mixture_zipf_000000': {'link': 'https://drive.google.com/uc?id=1OqWjZCM01FfezJgiHhQMZyA_F_kapD7k',
+                                     'name': 'mixture_zipf_000000.zip'},
+             'mixture_zipf_words_nc10_000000': {'link': 'https://drive.google.com/uc?id=1QysiWVqQ5Qh3NPD0Cf64GROATWqIqOy7',
+                                                'name': 'mixture_zipf_words_nc10_000000'},
+             'mixture_zipf_contexts_nc10_000000': {'link': 'https://drive.google.com/uc?id=1_BRX1D5zi7uNQlno3bPQ8_RtryAMPssK',
+                                                   'name': 'mixture_zipf_contexts_nc10_000000'},
+             'mixture_zipf_contexts_nc2_000000': {'link': 'https://drive.google.com/uc?id=1nqXk_ld-PnsmjWVMc_qLHkl1OK1A4TZL',
+                                                   'name': 'mixture_zipf_contexts_nc2_000000'},
              }
     
     gdown_valid = {'0-0-0': {'link': 'https://drive.google.com/uc?id=10_j0MK8jiOe8C0JvAuPz-Dw5Zm_Lqkn3',
@@ -215,7 +226,7 @@ def _get_keys(params: dict):
     key_target = f"{params['LEXICON_TGT']}-{split}-{field}-{freq}"
     key_target_eval = f"{params['LEXICON_TGT']}-{field}-{freq}"
     
-    return key_source, key_target, key_source_eval, key_source_eval
+    return key_source, key_target, key_source_eval, key_target_eval
                
 def download_raws(paths: dict,
                   key_source: str = '',
@@ -356,6 +367,17 @@ def preprocess_raws(paths: dict,
                                 params['EXP_NAME'])
     if os.path.exists(paths['EXP']):
         print("Experiment already exists.")
+        num_exp = -1
+        for name in glob.glob(f"{paths['EXP']}*"):
+            num = name[len(paths['EXP'])+1:]
+            if len(num) == 0 or 'SUP' in num:
+                continue
+            num = int(num)
+            print("name ", name)
+            if num > num_exp:
+                num_exp = num
+        paths['EXP'] += f"_{num_exp + 1}"
+        
         
     os.makedirs(paths['EXP'],
                 exist_ok=True)
@@ -793,6 +815,7 @@ if __name__ == '__main__':
     # Run main.py
     
     if params['PROP_SUPERVISED'] == 1.:
+        assert params['PARA']
         print('Supervised Training!')
         os.system(f"python main.py\
                     --exp_name {params['EXP_NAME']}\
@@ -808,9 +831,7 @@ if __name__ == '__main__':
                     --share_output_emb True \
                     --langs {params['SRC_STRING']},{params['TGT_STRING']} \
                     --n_para -1 \
-                    --para_dataset {params['SRC_STRING']}-{params['TGT_STRING']}:{paths['EXP']}/XX.tok.{params['CODES']}.pth,\
-                                                                                 {paths['EXP']}/XX_VALID.tok.{params['CODES']}.pth,\
-                                                                                 {paths['EXP']}/XX_TEST.tok.{params['CODES']}.pth \
+                    --para_dataset {params['SRC_STRING']}-{params['TGT_STRING']}:{paths['EXP']}/XX.tok.{params['CODES']}.pth,{paths['EXP']}/XX_VALID.tok.{params['CODES']}.pth,{paths['EXP']}/XX_TEST.tok.{params['CODES']}.pth \
                     --para_directions {params['SRC_STRING']}-{params['TGT_STRING']},{params['TGT_STRING']}-{params['SRC_STRING']} \
                     --pretrained_emb {paths['CONCAT_BPE']}.vec \
                     --pretrained_out True \
@@ -820,7 +841,7 @@ if __name__ == '__main__':
                     --enc_optimizer adam,lr=0.0001 \
                     --epoch_size 100000 \
                     --stopping_criterion 'bleu_{params['SRC_STRING']}_{params['TGT_STRING']}_valid,20' \
-                    --customized_data {params['SRC_STRING']}:{paths['CUSTOMIZED_TOK']}.{params['CODES']}.pth\;{params['TGT_STRING']}:")
+                    {custom_file_arg}")
     
     elif params['BILINGUAL_DICT_SUP']:
         print('Unsupervised training with supervised bilingual dictionnary training')
