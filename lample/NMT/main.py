@@ -237,8 +237,11 @@ def get_parser():
                         help="Length penalty: <1.0 favors shorter, >1.0 favors longer sentences")
     # custom
     parser.add_argument("--wandb",
-    			              help="Store training data on wandb.",
-   			                action="store_true")
+    			        help="Store training data on wandb.",
+   			            action="store_true")
+    parser.add_argument("--filtering",
+    			        help="Apply filtering.",
+   			            action="store_true")
     parser.add_argument("--customized_data",
                         help="File we want the model to translate.", type=str, default="")
     
@@ -246,6 +249,11 @@ def get_parser():
 
 
 def main(params):
+    
+    if params.filtering:
+        print("###########################################")
+        print("\t We are Applying Filtering !!")
+        print("###########################################")
     
     # wandb
     if params.wandb:
@@ -305,6 +313,8 @@ def main(params):
 
     # language model pretraining
     if params.lm_before > 0:
+        print(" lambda_lm ", params.lambda_lm)
+        print(" type lambda_lm ", type(params.lambda_lm))
         logger.info("Pretraining language model for %i iterations ..." % params.lm_before)
         trainer.n_sentences = 0
         for _ in range(params.lm_before):
@@ -369,13 +379,15 @@ def main(params):
                 trainer.gen_time += time.time() - before_gen
 
                 # training
-                for batch in batches:
+                for batch in batches: # Batches contains 2 batches, one is src->tgt->src, the other tgt->src->tgt
                     lang1, lang2, lang3 = batch['lang1'], batch['lang2'], batch['lang3']
                     # 2-lang back-translation - autoencoding
                     if lang1 != lang2 == lang3:
                         trainer.otf_bt(batch, params.lambda_xe_otfa, params.otf_backprop_temperature)
+                        
                     # 2-lang back-translation - parallel data
                     elif lang1 == lang3 != lang2:
+                        # We are here!
                         trainer.otf_bt(batch, params.lambda_xe_otfd, params.otf_backprop_temperature)
                     # 3-lang back-translation - parallel data
                     elif lang1 != lang2 and lang2 != lang3 and lang1 != lang3:

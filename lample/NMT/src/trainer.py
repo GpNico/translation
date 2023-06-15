@@ -9,6 +9,7 @@ import os
 import time
 from logging import getLogger
 import numpy as np
+from nltk.translate.bleu_score import SmoothingFunction, sentence_bleu
 import torch
 from torch.nn import functional as F
 from torch.nn.utils import clip_grad_norm_
@@ -18,6 +19,7 @@ from .utils import get_optimizer, parse_lambda_config, update_lambdas
 from .model import build_mt_model
 from .multiprocessing_event_loop import MultiprocessingEventLoop
 from .test import test_sharing
+from .evaluator import convert_to_text
 
 import wandb
 
@@ -407,15 +409,15 @@ class TrainerMT(MultiprocessingEventLoop):
         # loss
         loss = 0
         if self.lm.use_lm_enc:
-            loss_enc = loss_fn(scores_enc.view(-1, n_words), sent1[1:].view(-1))
+            loss_enc = loss_fn(scores_enc.view(-1, n_words), sent1[1:].view(-1)).mean() # reduction = 'none' now
             self.stats['lme_costs_%s' % lang].append(loss_enc.item())
             loss += loss_enc
         if self.lm.use_lm_dec:
-            loss_dec = loss_fn(scores_dec.view(-1, n_words), sent1[1:].view(-1))
+            loss_dec = loss_fn(scores_dec.view(-1, n_words), sent1[1:].view(-1)).mean()
             self.stats['lmd_costs_%s' % lang].append(loss_dec.item())
             loss += loss_dec
         if self.lm.use_lm_enc_rev:
-            loss_enc_rev = loss_fn(scores_enc_rev.view(-1, n_words), sent1_rev[1:].view(-1))
+            loss_enc_rev = loss_fn(scores_enc_rev.view(-1, n_words), sent1_rev[1:].view(-1)).mean()
             self.stats['lmer_costs_%s' % lang].append(loss_enc_rev.item())
             loss += loss_enc_rev
         loss = self.params.lambda_lm * loss
@@ -472,7 +474,7 @@ class TrainerMT(MultiprocessingEventLoop):
 
         # cross-entropy scores / loss
         scores = self.decoder(encoded, sent2[:-1], lang2_id)
-        xe_loss = loss_fn(scores.view(-1, n_words), sent2[1:].view(-1))
+        xe_loss = loss_fn(scores.view(-1, n_words), sent2[1:].view(-1)).mean()
         if back:
             self.stats['xe_costs_bt_%s_%s' % (lang1, lang2)].append(xe_loss.item())
         else:
@@ -587,9 +589,10 @@ class TrainerMT(MultiprocessingEventLoop):
                     (sent1, len1), (sent3, len3) = self.get_batch('otf', lang1, lang3)
             # 2-lang back-translation - parallel data
             elif lang1 == lang3 != lang2:
+                # We are here
                 if self.params.lambda_xe_otfd > 0:
                     sent1, len1 = self.get_batch('otf', lang1, None)
-                    sent3, len3 = sent1, len1
+                    sent3, len3 = sent1, len1 # Hence that
             # 3-lang back-translation - parallel data
             else:
                 assert lang1 != lang2 and lang2 != lang3 and lang1 != lang3
@@ -671,6 +674,7 @@ class TrainerMT(MultiprocessingEventLoop):
         bs = sent1.size(1)
 
         if backprop_temperature == -1:
+            # We are here
             # lang2 -> lang3
             encoded = self.encoder(sent2, len2, lang_id=lang2_id)
         else:
@@ -687,7 +691,40 @@ class TrainerMT(MultiprocessingEventLoop):
 
         # cross-entropy scores / loss
         scores = self.decoder(encoded, sent3[:-1], lang_id=lang3_id)
-        xe_loss = loss_fn(scores.view(-1, n_words3), sent3[1:].view(-1))
+        
+        # For Round-Trip BLEU only
+        if params.filtering:
+            with torch.no_grad():
+                sent3_, len3_, _ = self.decoder.generate(encoded, lang3_id)
+            # Here we need to compute RT BLEU
+            
+            txt_sent3 = convert_to_text(sent3, len3, self.data['dico'][lang3], lang3_id, self.params)
+            txt_sent3_ = convert_to_text(sent3_, len3_, self.data['dico'][lang3], lang3_id, self.params)
+            
+            bleus_tensor = torch.zeros(len(txt_sent3))
+            for k in range(len(txt_sent3)):
+                ref = txt_sent3[k].split()
+                hyp = txt_sent3_[k].split()
+                bleus_tensor[k] = sentence_bleu([ref], hyp, smoothing_function=SmoothingFunction().method3)
+                
+            if bleus_tensor.sum().item() != 0:
+                bleus_tensor = bleus_tensor/bleus_tensor.sum().item()
+                #print("Normalized BLEU ", bleus_tensor)
+                bleus_tensor = bleus_tensor.repeat(scores.shape[0]).cuda() # Should be (L-1)*BS
+                
+                xe_loss = torch.mul(
+                            loss_fn(
+                                scores.view(-1, n_words3), 
+                                sent3[1:].view(-1)
+                                ),  # Now its shape is (L-1)*BS (no reduction)
+                            bleus_tensor).mean()
+            else:
+                print("RT BLEU is zero. Not applying any weighting.")
+                xe_loss = loss_fn(scores.view(-1, n_words3), sent3[1:].view(-1)).mean()
+                
+        else:
+            xe_loss = loss_fn(scores.view(-1, n_words3), sent3[1:].view(-1)).mean() # Now its shape is (L-1)*BS (no reduction) hence the mean here
+        
         self.stats['xe_costs_%s_%s_%s' % direction].append(xe_loss.item())
         assert lambda_xe > 0
         loss = lambda_xe * xe_loss
@@ -779,7 +816,8 @@ class TrainerMT(MultiprocessingEventLoop):
             
             if self.params.wandb:
             	wandb.log({**stats_to_log})
-
+             
+             
     def save_model(self, name):
         """
         Save the model.

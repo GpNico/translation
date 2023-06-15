@@ -38,6 +38,12 @@ def get_exp_name(params: dict):
     if params['PARA']:
         EXP_NAME += '_SUP'
         
+    if params['FILTERING']:
+        EXP_NAME += '_FILTERING'
+    
+    if params['PRETRAINING']:
+        EXP_NAME += '_PRETRAINING'
+        
     # Update dict
     params['SRC_STRING'] = SRC_STRING
     params['TGT_STRING'] = TGT_STRING
@@ -603,6 +609,9 @@ if __name__ == '__main__':
     params['FREQ_TGT']=config.FREQ_TGT 
     params['PARA']=config.PARA # the target is now parallel to the source
     params['FIELD']=config.FIELD # download lexical field data /!\ Freq is k=1.1, no need to specify FREQ_XXX /!\
+        
+    params['FILTERING']=config.FILTERING
+    params['PRETRAINING']=config.PRETRAINING
     
     assert params['LEXICON_SRC'] == 0
     
@@ -812,6 +821,17 @@ if __name__ == '__main__':
         custom_file_arg = ""
     
     
+    # Filtering flag
+    
+    filtering_flag = ""
+    if params['FILTERING']:
+        filtering_flag = "--filtering"
+        
+    # Pre-Training Flag
+    pretraining_flag = ""
+    if params['PRETRAINING']:
+        pretraining_flag = "--lm_before 10 --lambda_lm '1' "
+    
     # Run main.py
     
     if params['PROP_SUPERVISED'] == 1.:
@@ -918,7 +938,9 @@ if __name__ == '__main__':
                    --enc_optimizer adam,lr=0.0001 \
                    --epoch_size 100000 \
                    --stopping_criterion 'bleu_{params['SRC_STRING']}_{params['TGT_STRING']}_valid,20' \
-                   {custom_file_arg}")
+                   {custom_file_arg}\
+                   {filtering_flag}\
+                   {pretraining_flag}")
         
     else:
         print(f"Training with a proportion of {params['PROP_SUPERVISED']} supervised examples !")

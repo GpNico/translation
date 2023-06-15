@@ -18,6 +18,9 @@ FIELD=False # download lexical field data /!\ Freq is k=1.1, no need to specify 
 TRANSFORMER = True # Else LSTM
 PARTIAL_DICT = False # Train with a partial bilingual dict (half the complete voc)
 BILINGUAL_DICT_SUP = False # Train with a supervised bilingual dict
+
+FILTERING = True
+PRETRAINING = False # Do not support LM pre-training for more than one shared-layer
     
 # Fix
 CODES=1000      # number of BPE codes
